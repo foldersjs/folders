@@ -1,0 +1,149 @@
+/*
+ *
+ * Special provider which can serve content from several providers.
+ * File systems are listed as named folders in the root directory.
+ *
+ */
+var UnionFio = function(fio, mounts, opts, prefix) {
+  this.fio = fio;
+  this.prefix = prefix || "/http_folders.io_0:union/";
+  this.mounts = mounts;
+  this.fuse = this.setup(opts);
+}
+
+module.exports = UnionFio;
+
+UnionFio.prototype.setup = function(opts) {
+  var prefix = this.prefix;
+  // opts is always list.
+  opts = {"view": "list"};
+  var mounts = this.mounts;
+  for(var i = 0; i < mounts.length; i++) {
+    var folder = mounts[i];
+    var paths = {};
+    for(var name in folder) if(folder.hasOwnProperty(name)) {
+      paths[name] = folder[name].create(prefix + name + "/");
+    };
+  }
+  return paths;
+};
+
+
+var normalizePath = function(prefix, o) {
+  var path = o.path;
+  if(path != null && path.indexOf('@') > -1) {
+    var preuri = path.substr(path.indexOf('@')+1).substr(prefix.length);
+    path = preuri;
+  }
+  return path;
+};
+
+
+UnionFio.prototype.asView = function(path, viewfs) {
+    if(path.substr(0,1) != "/") path = "/" + path;
+    var subpos = path.indexOf("/", 1);
+    var root = subpos > -1 ? path.substr(0,subpos) : path;
+    var name = root.substr(1);
+    console.log("asView", name, path);
+    if(!(name in viewfs)) {
+        return false;
+    }
+    var rootfs = viewfs[name];
+    var subpath = subpos > -1 ? path.substr(subpos) : "/";
+    return { name: name, base: rootfs , path: subpath }
+};
+
+UnionFio.prototype.onList = function(data) {
+  var fio = this.fio;
+  var o = data.data;
+  var uri = normalizePath(this.prefix, o);
+  var lsMime = ["Content-Type:application/json"];
+
+  this.ls(uri, data, function(files, err) {
+    fio.post(o.streamId, JSON.stringify(files), lsMime, data.shareId);
+  });
+};
+
+
+UnionFio.prototype.ls = function(path, data, cb) {
+    var self = this;
+
+    var fio = this.fio;
+    var prefix = this.prefix;
+    var paths = this.fuse;
+    var multicast = false;
+
+    var out = [];
+    if(path == "" || path.substr(0,1) != "/") path = "/" + path;
+    if(path == "" || path.substr(-1) != "/") path = path + "/";
+
+    // NOTES: List from all mounts. Not implemented.
+    if(multicast) {
+      for(var i in paths) {
+        self.onSubList(self.fio, paths[i], data);
+      }
+      return;
+    }
+
+    if(path == "/") {
+      var mounts = [];
+      for(var i in paths) {
+        mounts.push(self.asFolder(path, {
+          name: i,
+          type: 1
+        }));
+      }
+      cb(mounts);
+    }
+    else {
+        var parts = this.asView(path, paths);
+        if(!parts || !parts.base) {
+          console.log("could not find path", path);
+          return;
+        }
+        var mount = parts.base;
+        if(mount.ls) {
+          self.onSubList(self.fio, mount, data);
+        }
+        else {
+          console.log("mount does not provide file lists", parts);
+        }
+    }
+};
+
+
+UnionFio.prototype.asFolder = function(dir, file) {
+  var o = { name: file.name };
+  o.fullPath = dir + file.name;
+  if(!o.meta) o.meta = {};
+  o.uri = "#" + this.prefix + o.fullPath;
+  o.size = file.size || 0;
+  o.extension = "txt";
+  o.type = "text/plain";
+  if(file.type == '1') {
+      o.extension = '+folder';
+      o.type = "";
+  }
+  return o;
+};
+
+
+UnionFio.prototype.onSubList = function(fio, mount, data) {
+  var o = data.data;
+  var uri = normalizePath(mount.prefix, o);
+  var lsMime = ["Content-Type:application/json"];
+
+  var response = function(files) {
+    fio.post(o.streamId, JSON.stringify(files), lsMime, data.shareId);
+  }
+  mount.ls(uri, function(files, err) {
+    if(err) {
+      console.log("error listing files", uri, err);
+      return;
+    }
+    if(mount.meta) mount.meta(uri, files, function(files) {
+        response(files);
+    });
+    else response(files);
+  });
+};
