@@ -25,7 +25,9 @@ var StubFs = function(fio) {
       "X-File-Size:960",
       "X-File-Type:text/plain"
     ],
-    asData: (new Array(960 + 1)).join("Z")
+    asData: (new Array(960 + 1)).join("Z"),
+    writeData:[{"name":"stub-file.txt"}],
+    writeMime:["Content-Type:application/json"]
   };
   this.ls = function(data, cb) {
 	cb(stubData.lsData);
@@ -34,5 +36,12 @@ var StubFs = function(fio) {
 	cb({streamId: data.data.streamId, data: stubData.asData,
 		headers: stubData.asMime, shareId: data.shareId});
   };
+  
+  this.write = function(data, cb){
+  	cb({streamId: data.data.streamId, data:stubData.writeData,
+  		headers:stubData.writeMime, shareId:data.shareId});
+  };
+  
+  
 };
 module.exports = StubFs;

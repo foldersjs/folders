@@ -45,6 +45,26 @@ LocalFio.prototype.cat = function(data, cb) {
   });
 };
 
+LocalFio.prototype.write = function(data, cb) {
+	var stream = data.data;
+	//var headers = data.headers;
+	var streamId = data.streamId;
+	var shareId = data.shareId;
+	var uri = data.uri;
+
+	var headers = {
+		"Content-Type" : "application/json"
+	};
+
+	write(uri, stream, function(result, err) {
+		cb({
+			streamId : streamId,
+			data : result,
+			headers : headers,
+			shareId : shareId
+		});
+	});
+};
 
 LocalFio.prototype.ls = function(uri, cb) {
   var self = this;
@@ -129,3 +149,17 @@ var cat = function(uri, cb) {
     }
   });
 };
+
+var write = function(uri, data, cb) {
+	try {
+		var file = fs.createWriteStream(uri);
+		file.write(data, function() {
+			file.end(function() {
+				cb(null, "write uri success");
+			});
+		});
+
+	} catch (e) {
+		cb(null, "unable to write uri");
+	}
+}
