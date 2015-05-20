@@ -26,6 +26,8 @@ var backoff = require('backoff');
  */
 var Promise = require('promise');
 
+
+// FIXME: Can be moved to an extension library, as transform is supported.
 /*
  * Messaging library: security and verification.
  * Special thanks to TweetNaCl public domain contributors.
@@ -34,6 +36,7 @@ var nf = require('tweetnacl');
 var handshakePub = nf.util.encodeBase64(nf.box.keyPair().publicKey);
 // var Nacl = require('nacl-stream');
 var Nacl = require('./util/stream-nacl.js');
+
 
 // Read a string or buffer as a stream.
 var util = require("util");
