@@ -11,6 +11,7 @@
   "bugs": {
     "url": "https://github.com/foldersjs/folders/issues"
   },
+   "main": "./src/folders-local",
   "homepage": "https://github.com/foldersjs/folders",
   "dependencies": {
   },
