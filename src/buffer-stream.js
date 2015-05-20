@@ -16,6 +16,8 @@ var BufferStream = function(options, buf) {
 	this.buf = buf;
 	Readable.call(this, options);
 };
+module.exports = BufferStream;
+
 util.inherits(BufferStream, Readable);
 BufferStream.prototype._read = function(n) {
 	if(this.isArray) {

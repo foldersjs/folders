@@ -10,8 +10,6 @@
 
 // FIXME: Wrap constructor: Api(route) with route.outbound and route.postal by default set to noop.
 // Pluggable interfaces are not needed as a dependency until used.
-var outbound = require('request');
-var postal = require('postal');
 // Only used for one method.
 var stream = require('event-stream');
 // Not yet used, not used here.
@@ -22,7 +20,7 @@ var backoff = require('backoff');
 
 
 /*
- * Polyfill for promises
+ * Polyfill for promises: let's just implement a subset.
  */
 var Promise = require('promise');
 
@@ -64,10 +62,22 @@ BufferStream.prototype._read = function(n) {
  * Fio().watch returns a Promise for a [Postal.js] channel.
  *
  */
+
+
+// FIXME: Make route the input argument to the constructor, supplying the full interface.
+var outbound = require('request');
+var postal = require('postal');
 var route = require('./route');
+route.channel = function(uri) { var channel = postal.channel(namespace); return channel; };
+route.post = function(uri, opts) { return outbound.post(uri, { headers: headers }); };
+
+
 var registry = {};
 var providers = {};
-var Fio = function(baseUri, asDebug) {
+var Fio = function(baseUri, asDebug, routeImpl) {
+		// FIXME: The default implementation could use the memory based backend.
+		routeImpl = routeImpl || route;
+		if(route !== routeImpl) route = routeImpl;
 		baseUri = baseUri || "http://window.io";
 		asDebug = asDebug || false;
 		this.baseUri = baseUri;
@@ -93,6 +103,7 @@ var Fio = function(baseUri, asDebug) {
  *
  */
 
+// FIXME: Handle this better, provide the provider as the argument, or handle elsewhere.
 Fio.prototype.provider = function(module, opts) {
 	var create = function(prefix) {
 		if(!(module in providers)) {
@@ -116,7 +127,7 @@ Fio.prototype.watch = function(session, namespacePrefix) {
 		registry[session.shareId] = session;
 
 		return new Promise(function(ready, error) {
-			var channel = postal.channel(namespace);
+			var channel = route.channel(namespace);
 			var hasReady = false;
 			var onMessage = function(data) {
 				// Ignore multiplexing.
@@ -241,7 +252,7 @@ Fio.prototype.post = function(streamId, data, headerMap, tokenId) {
 				data = JSON.stringify(data);
 				contentLength = data.length;
 				headers['content-length'] = contentLength; // + transform.overheadLength;
-				return new BufferStream(null, data).pipe(outbound.post(uri, { headers: headers }));
+				return new BufferStream(null, data).pipe(route.post(uri, { headers: headers }));
 			}));
 		}
 	}
@@ -261,7 +272,7 @@ Fio.prototype.post = function(streamId, data, headerMap, tokenId) {
 		}
 
 		headers['origin'] = this.baseUri;
-		return data.pipe(outbound.post(uri, { headers: headers })).pipe(process.stdout);
+		return data.pipe(route.post(uri, { headers: headers })).pipe(process.stdout);
 	}
 };
 
