@@ -18,6 +18,23 @@ var BufferStream = function(options, buf) {
 };
 module.exports = BufferStream;
 
+// Read a stream into an array .
+var Stream = require('stream').Writable;
+stream.readSync = function(cb) {
+	var data = new Stream();
+	var len = 0; var chunks = [];
+	data.on('data', function(chunk) {
+		console.log('got %d bytes of data',
+		len += chunk.length;
+		chunks.push(data);
+	});
+	data.on('end', function() {
+		fileSystem[uri] = { size: len, data: chunks };
+		cb(null, "write uri success");
+	});
+	return data;
+};
+
 util.inherits(BufferStream, Readable);
 BufferStream.prototype._read = function(n) {
 	if(this.isArray) {

@@ -146,6 +146,7 @@ var fileSystem = {};
 
 var write = function(uri, data, cb) {
 	// NOTES: uri could be setup to be a destination pipe, such as piped writable in Java
+	// FIXME: This implementation can just be re-used from buffer-stream.
 	var len = 0; var chunks = [];
 	data.on('data', function(chunk) {
 		console.log('got %d bytes of data',
