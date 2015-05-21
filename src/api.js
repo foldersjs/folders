@@ -60,6 +60,13 @@ Fio.prototype.provider = function(module, opts) {
 };
 
 
+/*
+ *
+ * postaljs is an excellent channel provider:
+ * https://github.com/postaljs/postal.js/blob/master/lib/postal.lodash.js
+ *
+ */
+
 
 Fio.prototype.watch = function(session, namespacePrefix) {
 	var baseUri = this.baseUri;
@@ -235,6 +242,10 @@ var simple = function(baseUri, onReady, onError, onListRequest, onBlobRequest) {
 	var baseChannel = null;
 	fio.watch().then(function(channel) {
 		baseChannel = channel;
+		// could get re-opened...
+		channel.subscribe("SocketClosed", function() {
+			// channel.unsubscribe("*");
+		});
 		channel.subscribe("DirectoryListRequest", function(data, envelope) {
 			if(onListRequest) onListRequest(data);
 		});

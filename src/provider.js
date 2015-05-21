@@ -3,6 +3,8 @@
  * Folders.io basic routing example.
  *
  * Uses the folders API to serve files and folders from various providers.
+ * This hooks into the union.js event to serve multiple providers on a single share Id.
+ * It uses the fio.streams map to track multiple share Ids.
  *
  */
  
@@ -31,8 +33,10 @@ ProviderFriendly.prototype.fioHandler = function(channel) {
 		},
 		
 		send: function(data) {
-		// Could also check channel id vs target shareId.
-		
+
+			// FIXME: Handle SocketClose events gracefully.
+
+			// Could also check channel id vs target shareId.
 			if(fio.streams && data.type == "DirectoryListRequest") {
 				var shareId = data.data.shareId;
 				if(shareId in fio.streams) {
@@ -44,7 +48,7 @@ ProviderFriendly.prototype.fioHandler = function(channel) {
 				}
 			}
 			if(data.type == "RaftJoin") {
-			// for(i in fio.streams) if(fio.streams[i][..].onJoin(...));
+				// for(i in fio.streams) if(fio.streams[i][..].onJoin(...));
 				return;
 			}
 			if(data.type == "SetFilesRequest") {
@@ -70,20 +74,19 @@ ProviderFriendly.prototype.fioHandler = function(channel) {
 			listener.onClose = function() {
 				var obj = fio.streams[shareId];
 				delete obj[streamId];
-		        var empty = true; for (key in obj) {
+				var empty = true;
+				for (key in obj) {
 					if (obj.hasOwnProperty(key)) {
 						empty = false;
 						break;
 					}
 				};
-			if(empty) delete fio.streams[shareId];
+				if(empty) delete fio.streams[shareId];
 			};
 			console.log("cool", channel, shareId, streamId);
 		}
 	}
-	
-	
-	
+
 	console.log("Folders.io channel is active:", channel.channel);
 
 	// exports
