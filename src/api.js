@@ -46,7 +46,11 @@ var Fio = function(baseUri, asDebug, routeImpl) {
 Fio.prototype.provider = function(module, opts) {
 	var create = function(prefix) {
 		if(!(module in providers)) {
-			providers[module] = require("./folders/folders-" + module);
+			try {
+				providers[module] = require("./folders-" + module);
+			} catch(e) {
+				providers[module] = require(module);
+			}
 		}
 		var Provider = providers[module];
 		return new Provider(prefix, opts);
