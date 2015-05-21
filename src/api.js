@@ -7,71 +7,10 @@
  *
  */
 
+// todo: close down routes for garbage collection
 
-// FIXME: Wrap constructor: Api(route) with route.outbound and route.postal by default set to noop.
-// Pluggable interfaces are not needed as a dependency until used.
-// Only used for one method.
-var stream = require('event-stream');
-// Not yet used, not used here.
-var backoff = require('backoff');
-// route can provide outbound and backoff.
-// stream can be moved out. postal interface is mostly limited in this use.
-
-
-
-/*
- * Polyfill for promises: let's just implement a subset.
- */
-var Promise = require('promise');
-
-
-// FIXME: Can be moved to an extension library, as transform is supported.
-/*
- * Messaging library: security and verification.
- * Special thanks to TweetNaCl public domain contributors.
- */
-var nf = require('tweetnacl');
-var handshakePub = nf.util.encodeBase64(nf.box.keyPair().publicKey);
-// var Nacl = require('nacl-stream');
-var Nacl = require('./util/stream-nacl.js');
-
-
-// Read a string or buffer as a stream.
-var util = require("util");
-var Readable = require('stream').Readable;
-var BufferStream = function(options, buf) {
-	if (!(this instanceof BufferStream))
-		return new BufferStream(options, buf);
-	if(!(buf instanceof Buffer)) buf = new Buffer(buf);
-	this.buf = buf;
-	Readable.call(this, options);
-};
-util.inherits(BufferStream, Readable);
-BufferStream.prototype._read = function(n) {
-	this.push(this.buf);
-	this.buf = null;
-	this.push(null);
-};
-
-
-// Could take a route object which provides outbound, channel
-
-
-/*
- *
- * Fio().watch returns a Promise for a [Postal.js] channel.
- *
- */
-
-
-// FIXME: Make route the input argument to the constructor, supplying the full interface.
-var outbound = require('request');
-var postal = require('postal');
-var route = require('./route');
-route.channel = function(uri) { var channel = postal.channel(namespace); return channel; };
-route.post = function(uri, opts) { return outbound.post(uri, { headers: headers }); };
-
-
+var BufferStream = require('buffer-stream');
+var route = {};
 var registry = {};
 var providers = {};
 var Fio = function(baseUri, asDebug, routeImpl) {
@@ -103,7 +42,7 @@ var Fio = function(baseUri, asDebug, routeImpl) {
  *
  */
 
-// FIXME: Handle this better, provide the provider as the argument, or handle elsewhere.
+// FIXME: Handle this in a flexible manner.
 Fio.prototype.provider = function(module, opts) {
 	var create = function(prefix) {
 		if(!(module in providers)) {
@@ -126,7 +65,7 @@ Fio.prototype.watch = function(session, namespacePrefix) {
 		var namespace = namespacePrefix + session.shareId;
 		registry[session.shareId] = session;
 
-		return new Promise(function(ready, error) {
+		return new route.Promise(function(ready, error) {
 			var channel = route.channel(namespace);
 			var hasReady = false;
 			var onMessage = function(data) {
@@ -168,7 +107,7 @@ Fio.prototype.watch = function(session, namespacePrefix) {
 		return watch(session);
 	}
 
-	var open = new Promise(function(ready, error) {
+	var open = new route.Promise(function(ready, error) {
 		if(this.DEBUG) {
 			console.info("Ready to open folders.io host: ", this.baseUri);
 		}
@@ -242,9 +181,11 @@ Fio.prototype.post = function(streamId, data, headerMap, tokenId) {
 		headers['content-length'] = contentLength;
 		data = new BufferStream(null, data);
 
+// NOTES: This provides an extension mechanism but is not formalized.
 		/* Prototype: encrypt a folder listing */
 		if(false && transform) {
-			return data.pipe(transform).pipe(stream.mapSync(function(buffer) {
+			var handshakePub = null;
+			return data.pipe(transform).pipe(BufferStream.readSync(function(buffer) {
 				var data = [];
 				var output = buffer.toString('base64');
 				data.push({ name: ".", uri: "#/.", extension: "", "type":"+folder", "data": output, size: buffer.length });
@@ -272,6 +213,7 @@ Fio.prototype.post = function(streamId, data, headerMap, tokenId) {
 		}
 
 		headers['origin'] = this.baseUri;
+		// FIXME: stdout is used for debugging.
 		return data.pipe(route.post(uri, { headers: headers })).pipe(process.stdout);
 	}
 };

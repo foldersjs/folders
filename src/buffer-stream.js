@@ -20,7 +20,7 @@ module.exports = BufferStream;
 
 // Read a stream into an array .
 var Stream = require('stream').Writable;
-stream.readSync = function(cb) {
+BufferStream.readSync = function(cb) {
 	var data = new Stream();
 	var len = 0; var chunks = [];
 	data.on('data', function(chunk) {
