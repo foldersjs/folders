@@ -167,7 +167,7 @@ var write = function(uri, data, cb) {
 		var file = fs.createWriteStream(uri);
 		file.write(data, function() {
 			file.end(function() {
-				cb(null, "write uri success");
+				cb("write uri success");
 			});
 		});
 
