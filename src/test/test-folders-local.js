@@ -6,7 +6,13 @@ var local = new FoldersLocal();
 
 describe('test command ls for folders local', function() {
 	it('should ls the file data in current dir', function(done) {
-		local.ls('.', function cb(files) {
+		local.ls('.', function cb(files,err) {
+			if (err){
+				console.log(err);
+				done();
+				return;
+			}
+			
 			console.log("\nls results:");
 			console.log(files);
 
@@ -26,7 +32,12 @@ describe('test command cat for folders local', function() {
 			data : {
 				fileId : "./gulpfile.js"
 			}
-		}, function cb(results) {
+		}, function cb(results,err) {
+			if (err){
+				console.log(err);
+				done();
+				return;
+			}
 			console.log("\ncat result:");
 			console.log(results);
 			console.log("\nfile data");
@@ -59,7 +70,12 @@ describe('test command put for folders local', function() {
 				"X-File-Type" : "text/plain"
 			},
 			shareId : "test-share-Id"
-		}, function(result) {
+		}, function(result,err) {
+			if (err){
+				console.log(err);
+				done();
+				return;
+			}
 			console.log(result);
 
 			fs.exists(fileNameToWrite, function(exists) {

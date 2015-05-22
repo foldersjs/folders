@@ -34,6 +34,12 @@ LocalFio.prototype.cat = function(data, cb) {
   var uri = this.normalizePath(o);
 
   cat(uri, function(result, err) {
+  	if (err){
+  		console.log("error in folders-local cat,",err);
+  		cb(null, err);
+  		return;
+  	}
+  	
     var headers = {
       "Content-Length": result.size,
       "Content-Type": "application/octet-stream",
@@ -57,6 +63,12 @@ LocalFio.prototype.write = function(data, cb) {
 	};
 
 	write(uri, stream, function(result, err) {
+		if (err){
+  		console.log("error in folders-local write,",err);
+  		cb(null, err);
+  		return
+  	}
+		
 		cb({
 			streamId : streamId,
 			data : result,
