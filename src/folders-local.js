@@ -66,7 +66,7 @@ LocalFio.prototype.write = function(data, cb) {
 		if (err){
   		console.log("error in folders-local write,",err);
   		cb(null, err);
-  		return
+  		return;
   	}
 		
 		cb({
