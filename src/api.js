@@ -43,7 +43,7 @@ var Fio = function(baseUri, asDebug, routeImpl) {
  */
 
 // FIXME: Handle this in a flexible manner.
-Fio.prototype.provider = function(module, opts) {
+Fio.provider = function(module, opts) {
 	var create = function(prefix) {
 		if(!(module in providers)) {
 			try {
