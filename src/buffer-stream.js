@@ -24,7 +24,7 @@ BufferStream.readSync = function(cb) {
 	var data = new Stream();
 	var len = 0; var chunks = [];
 	data.on('data', function(chunk) {
-		console.log('got %d bytes of data',
+		console.log('got %d bytes of data', chunk.length);
 		len += chunk.length;
 		chunks.push(data);
 	});

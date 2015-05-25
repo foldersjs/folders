@@ -42,7 +42,9 @@ var Fio = function(baseUri, asDebug, routeImpl) {
  *
  */
 
+// FIXME: This seems broken.
 // FIXME: Handle this in a flexible manner.
+Fio.prototype.provider =
 Fio.provider = function(module, opts) {
 	var create = function(prefix) {
 		if(!(module in providers)) {
@@ -59,6 +61,22 @@ Fio.provider = function(module, opts) {
 	return fn;
 };
 
+// NOTES: Union seems to be a good sub to pass any provider through.
+Fio.prototype.union = 
+Fio.union = function() {
+	return require('./union');
+}
+
+// FIXME: Quick hacks as union can't currently mount a single provider as a root.
+Fio.prototype.stub = 
+Fio.stub = function() {
+	return require('./folders-stub');
+}
+
+Fio.prototype.local = 
+Fio.local = function() {
+	return require('./folders-local');
+}
 
 /*
  *
