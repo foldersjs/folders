@@ -35,9 +35,8 @@ LocalFio.prototype.cat = function(data, cb) {
 
   cat(uri, function(result, err) {
   	if (err){
-  		console.log("error in folders-local cat,",err);
-  		cb(null, err);
-  		return;
+  		console.error("error in folders-local cat,",err);
+  		return cb(null, err);
   	}
   	
     var headers = {
@@ -64,9 +63,8 @@ LocalFio.prototype.write = function(data, cb) {
 
 	write(uri, stream, function(result, err) {
 		if (err){
-  		console.log("error in folders-local write,",err);
-  		cb(null, err);
-  		return;
+  		console.error("error in folders-local write,",err);
+  		return cb(null, err);
   	}
 		
 		cb({
@@ -85,13 +83,12 @@ LocalFio.prototype.ls = function(uri, cb) {
 
   fs.stat(uri, function(err, stats) {
     if(err) {
-      cb(null, err);
-      return;
+    	console.error("error in folders-local ls,", err);
+    	return cb(null, err);
     }
     if(!stats.isDirectory()) {
       var results = self.asFolders(uri, [stats]);
-      cb(results);
-      return;
+      return cb(results);
     }
     fs.readdir(uri, function(err, files) {
       var results = self.asFolders(uri, files);
@@ -143,12 +140,11 @@ LocalFio.prototype.asFolders = function(dir, files) {
 var cat = function(uri, cb) {
   fs.stat(uri, function(err, stats) {
     if(err) {
-      cb(null, err);
-      return;
+    	console.error("error in folders-local cat,",err);
+    	return cb(null, err);
     }
     if(stats.isDirectory()) {
-      cb(null, "refused to cat directory");
-      return;
+    	return cb(null, "refused to cat directory");
     }
     var size = stats.size;
     var name = path.basename(uri);
@@ -157,6 +153,7 @@ var cat = function(uri, cb) {
         cb({stream: file, size: size, name: name});
       });
     } catch(e) {
+    	console.error("error in createReadStream,",e);
       cb(null, "unable to read uri");
     }
   });
@@ -172,6 +169,7 @@ var write = function(uri, data, cb) {
 		});
 
 	} catch (e) {
+		console.error("error in createWriteStream,",e);
 		cb(null, "unable to write uri");
 	}
 }
