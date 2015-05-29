@@ -49,8 +49,14 @@ Fio.provider = function(module, opts) {
 	var create = function(prefix) {
 		if(!(module in providers)) {
 			try {
-				providers[module] = require("./folders-" + module);
-			} catch(e) {
+				if (  ['stub','local','memory'].indexOf(module) > -1){
+					providers[module] = require("./folders-" + module);
+				}else	{ //external import, make sure add dependence in package.json 
+					providers[module] = require("folders-" + module);
+				}
+			} catch(e) { 
+				//if exception, we will try import using the module name directly
+				console.error(e);
 				providers[module] = require(module);
 			}
 		}

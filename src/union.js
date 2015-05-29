@@ -18,16 +18,16 @@ UnionFio.prototype.setup = function(opts) {
   // opts is always list.
   opts = {"view": "list"};
   var mounts = this.mounts;
+  var paths = {};
   for(var i = 0; i < mounts.length; i++) {
     var folder = mounts[i];
-    var paths = {};
     for(var name in folder) if(folder.hasOwnProperty(name)) {
+    	console.log("setup:",name,",prefix:",prefix + name + "/");
       paths[name] = folder[name].create(prefix + name + "/");
     };
   }
   return paths;
-};
-
+}; 
 
 var normalizePath = function(prefix, o) {
   var path = o.path;
@@ -39,8 +39,11 @@ var normalizePath = function(prefix, o) {
 };
 
 
+
 UnionFio.prototype.asView = function(path, viewfs) {
     if(path.substr(0,1) != "/") path = "/" + path;
+    
+    
     var subpos = path.indexOf("/", 1);
     var root = subpos > -1 ? path.substr(0,subpos) : path;
     var name = root.substr(1);
@@ -66,49 +69,67 @@ UnionFio.prototype.onList = function(data) {
 
 
 UnionFio.prototype.ls = function(path, data, cb) {
-    var self = this;
+	var self = this;
 
-    var fio = this.fio;
-    var prefix = this.prefix;
-    var paths = this.fuse;
-    var multicast = false;
+	var fio = this.fio;
+	var prefix = this.prefix;
+	var paths = this.fuse;
+	var multicast = true;
+	
+	var out = [];
+	if (path == "" || path.substr(0, 1) != "/")
+		path = "/" + path;
+	if (path == "" || path.substr(-1) != "/")
+		path = path + "/";
 
-    var out = [];
-    if(path == "" || path.substr(0,1) != "/") path = "/" + path;
-    if(path == "" || path.substr(-1) != "/") path = path + "/";
+	// NOTES: List from all mounts.
+	if (multicast) {
+		for ( var i in paths) {
+			// self.onSubList(self.fio, paths[i], data);
+			// FIXME: check if we want to send the list from all mounts in one time using cb() 
+			var mount = paths[i];
+			var uri = normalizePath(mount.prefix, data.data);
+			console.log("mount ls ", uri, mount.prefix);
+			mount.ls(uri, function(files, err) {
+				if (err) {
+					console.log("error listing files,", uri, err);
+					cb(null, err);
+					return;
+				}
+				if (mount.meta)
+					mount.meta(uri, files, function(files, err) {
+						cb(files); //out.push(files);
+					});
+				else
+					cb(files);// out.push(files);
+			});
+		}
+		return;
+	}
 
-    // NOTES: List from all mounts. Not implemented.
-    if(multicast) {
-      for(var i in paths) {
-        self.onSubList(self.fio, paths[i], data);
-      }
-      return;
-    }
+	if (path == "/") {
+		var mounts = [];
+		for ( var i in paths) {
+			mounts.push(self.asFolder(path, {
+				name : i,
+				type : 1
+			}));
+		}
+		cb(mounts);
+	} else {
 
-    if(path == "/") {
-      var mounts = [];
-      for(var i in paths) {
-        mounts.push(self.asFolder(path, {
-          name: i,
-          type: 1
-        }));
-      }
-      cb(mounts);
-    }
-    else {
-        var parts = this.asView(path, paths);
-        if(!parts || !parts.base) {
-          console.log("could not find path", path);
-          return;
-        }
-        var mount = parts.base;
-        if(mount.ls) {
-          self.onSubList(self.fio, mount, data);
-        }
-        else {
-          console.log("mount does not provide file lists", parts);
-        }
-    }
+		var parts = this.asView(path, paths);
+		if (!parts || !parts.base) {
+			console.log("could not find path", path);
+			return;
+		}
+		var mount = parts.base;
+		if (mount.ls) {
+			self.onSubList(self.fio, mount, data);
+		} else {
+			console.log("mount does not provide file lists", parts);
+		}
+	}
 };
 
 
@@ -126,7 +147,6 @@ UnionFio.prototype.asFolder = function(dir, file) {
   }
   return o;
 };
-
 
 UnionFio.prototype.onSubList = function(fio, mount, data) {
   var o = data.data;
