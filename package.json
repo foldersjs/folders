@@ -14,9 +14,6 @@
   "main": "./src/api",
   "homepage": "https://github.com/foldersjs/folders",
   "dependencies": {
-	"folders-ftp":"git://github.com/foldersjs/folders-ftp.git#master",
-	"folders-ssh":"git://github.com/foldersjs/folders-ssh.git#master",
-	"folders-hdfs":"git://github.com/foldersjs/folders-hdfs.git#master"
   },
   "devDependencies": {
     "gulp": "~3.8.10",
@@ -24,6 +21,9 @@
     "gulp-istanbul": "~0.5.0",
     "gulp-mocha": "~2.0.0",
     "gulp-exit": "0.0.2",
-    "ftpd": "~0.2.11"
+    "ftpd": "~0.2.11",
+    "folders-ftp":"git://github.com/foldersjs/folders-ftp.git#master",
+    "folders-ssh":"git://github.com/foldersjs/folders-ssh.git#master",
+    "folders-hdfs":"git://github.com/foldersjs/folders-hdfs.git#master"
   }
 }
