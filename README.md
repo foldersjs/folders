@@ -30,7 +30,7 @@ some options for exist folders provider.
 
 - folders-ftp options
 
-```json
+```js
 {
 	// the connection string, format: ftp//username:password@host:port
 	connectionString : "ftp://test:123456@localhost:3333",
@@ -42,7 +42,7 @@ some options for exist folders provider.
 
 - folders-ssh options
 
-```json
+```js
 {
 	// the connection string, format: ssh//username:password@host:port
 	connectionString : "ssh://test:123456@localhost:3334",
@@ -53,7 +53,7 @@ some options for exist folders provider.
 ```
 
 - folders-hdfs options
-```json
+```js
 {
 	// the base url address for hdfs instance
 	baseurl : "http://45.55.223.28/webhdfs/v1/data/",
