@@ -8,6 +8,8 @@ var mounts = [ {
 }, {
 	"local" : fio.provider("local")
 }, {
+	"memory" : fio.provider("memory")
+}, {
 	"ftp" : fio.provider("ftp", {
 		connectionString : "ftp://test:123456@localhost:3333",
 		enableEmbeddedServer : true
@@ -28,6 +30,7 @@ var unionfs = new UnionFio(fio, mounts, {
 	"view" : "list"
 });
 
+// test ls
 unionfs.ls('/', {
 	shareId : "test-share-id",
 	data : {
@@ -40,6 +43,16 @@ unionfs.ls('/', {
 		return;
 	}
 	console.log(files);
+});
+
+// test cat
+unionfs.cat('./data/test.txt', function(result, err) {
+	if (err){
+		console.error(err);
+		return ;
+	}
+	
+	console.log(result);
 });
 
 // onList = function(data) {
