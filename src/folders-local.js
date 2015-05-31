@@ -13,25 +13,22 @@ var LocalFio = function(fio, prefix) {
 };
 module.exports = LocalFio;
 
-LocalFio.prototype.normalizePath = function(o) {
+LocalFio.prototype.normalizePath = function(uri) {
   var prefix = this.prefix;
-  var op = o.path;
-  if(o.path != null && o.path.indexOf('@') > -1) {
-    var preuri = o.path.substr(o.path.indexOf('@')+1).substr(prefix.length);
-    o.path = preuri;
+  var op = uri;
+  if(uri != null && uri.indexOf('@') > -1) {
+    var preuri = uri.substr(uri.indexOf('@')+1).substr(prefix.length);
+    uri = preuri;
   }
-  console.log({prefix: prefix, op: op, path: o.path, pre: preuri});
-  var uri = path.resolve(path.normalize(o.path || "."));
+  console.log({prefix: prefix, op: op, path: uri, pre: preuri});
+  var uri = path.resolve(path.normalize(uri || "."));
   return uri;
 };
 
-LocalFio.prototype.cat = function(data, cb) {
-
-  var o = data.data;
-  o.path = o.fileId;
+LocalFio.prototype.cat = function(path, cb) {
 
   // FIXME: This method is repeated often and is fragile.
-  var uri = this.normalizePath(o);
+  var uri = this.normalizePath(path);
 
   cat(uri, function(result, err) {
   	if (err){
@@ -39,14 +36,16 @@ LocalFio.prototype.cat = function(data, cb) {
   		return cb(null, err);
   	}
   	
-    var headers = {
-      "Content-Length": result.size,
-      "Content-Type": "application/octet-stream",
-      "X-File-Type": "application/octet-stream",
-      "X-File-Size": result.size,
-      "X-File-Name": result.name
-    };
-    cb({streamId: o.streamId, data: result.stream, headers: headers, shareId: data.shareId });
+  	cb(result);
+  	
+//    var headers = {
+//      "Content-Length": result.size,
+//      "Content-Type": "application/octet-stream",
+//      "X-File-Type": "application/octet-stream",
+//      "X-File-Size": result.size,
+//      "X-File-Name": result.name
+//    };
+//    cb({streamId: o.streamId, data: result.stream, headers: headers, shareId: data.shareId });
   });
 };
 

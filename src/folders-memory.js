@@ -13,35 +13,30 @@ var MemoryFio = function(fio, prefix) {
 };
 module.exports = MemoryFio;
 
-MemoryFio.prototype.normalizePath = function(o) {
+MemoryFio.prototype.normalizePath = function(uri) {
   var prefix = this.prefix;
-  var op = o.path;
-  if(o.path != null && o.path.indexOf('@') > -1) {
-    var preuri = o.path.substr(o.path.indexOf('@')+1).substr(prefix.length);
-    o.path = preuri;
+  var op = uri;
+  if(uri != null && uri.indexOf('@') > -1) {
+    var preuri = uri.substr(uri.indexOf('@')+1).substr(prefix.length);
+    uri = preuri;
   }
-  console.log({prefix: prefix, op: op, path: o.path, pre: preuri});
-  var uri = path.resolve(path.normalize(o.path || "."));
+  console.log({prefix: prefix, op: op, path: uri, pre: preuri});
+  var uri = path.resolve(path.normalize(uri || "."));
   return uri;
 };
 
 MemoryFio.prototype.cat = function(data, cb) {
 
-  var o = data.data;
-  o.path = o.fileId;
-
   // FIXME: This method is repeated often and is fragile.
-  var uri = this.normalizePath(o);
+  var uri = this.normalizePath(data);
 
   cat(uri, function(result, err) {
-    var headers = {
-      "Content-Length": result.size,
-      "Content-Type": "application/octet-stream",
-      "X-File-Type": "application/octet-stream",
-      "X-File-Size": result.size,
-      "X-File-Name": result.name
-    };
-    cb({streamId: o.streamId, data: result.stream, headers: headers, shareId: data.shareId });
+    if (err){
+    	return cb(null, err);
+    }
+  	
+    cb(result);
+    //cb({streamId: o.streamId, data: result.stream, headers: headers, shareId: data.shareId });
   });
 };
 
@@ -149,7 +144,7 @@ var write = function(uri, data, cb) {
 	// FIXME: This implementation can just be re-used from buffer-stream.
 	var len = 0; var chunks = [];
 	data.on('data', function(chunk) {
-		console.log('got %d bytes of data',
+		console.log('got %d bytes of data',chunk.length);
 		len += chunk.length;
 		chunks.push(data);
 	});

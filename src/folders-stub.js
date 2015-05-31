@@ -33,8 +33,9 @@ var StubFs = function(fio) {
 	cb(stubData.lsData);
   };
   this.cat = function(data, cb) {
-	cb({streamId: data.data.streamId, data: stubData.asData,
-		headers: stubData.asMime, shareId: data.shareId});
+  	cb({stream:stubData.asData,size:960,file:'stub-file.txt'})
+//  	cb({streamId: data.data.streamId, data: stubData.asData,
+//		headers: stubData.asMime, shareId: data.shareId});
   };
   
   this.write = function(data, cb){

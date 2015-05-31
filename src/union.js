@@ -29,8 +29,7 @@ UnionFio.prototype.setup = function(opts) {
   return paths;
 }; 
 
-var normalizePath = function(prefix, o) {
-  var path = o.path;
+var normalizePath = function(prefix, path) {
   if(path != null && path.indexOf('@') > -1) {
     var preuri = path.substr(path.indexOf('@')+1).substr(prefix.length);
     path = preuri;
@@ -38,11 +37,8 @@ var normalizePath = function(prefix, o) {
   return path;
 };
 
-
-
 UnionFio.prototype.asView = function(path, viewfs) {
     if(path.substr(0,1) != "/") path = "/" + path;
-    
     
     var subpos = path.indexOf("/", 1);
     var root = subpos > -1 ? path.substr(0,subpos) : path;
@@ -59,7 +55,7 @@ UnionFio.prototype.asView = function(path, viewfs) {
 UnionFio.prototype.onList = function(data) {
   var fio = this.fio;
   var o = data.data;
-  var uri = normalizePath(this.prefix, o);
+  var uri = normalizePath(this.prefix, o.path);
   var lsMime = ["Content-Type:application/json"];
 
   this.ls(uri, data, function(files, err) {
@@ -88,13 +84,12 @@ UnionFio.prototype.ls = function(path, data, cb) {
 			// self.onSubList(self.fio, paths[i], data);
 			// FIXME: check if we want to send the list from all mounts in one time using cb() 
 			var mount = paths[i];
-			var uri = normalizePath(mount.prefix, data.data);
+			var uri = normalizePath(mount.prefix, data.data.path);
 			console.log("mount ls ", uri, mount.prefix);
 			mount.ls(uri, function(files, err) {
 				if (err) {
 					console.log("error listing files,", uri, err);
-					cb(null, err);
-					return;
+					return cb(null, err);
 				}
 				if (mount.meta)
 					mount.meta(uri, files, function(files, err) {
@@ -132,6 +127,35 @@ UnionFio.prototype.ls = function(path, data, cb) {
 	}
 };
 
+UnionFio.prototype.cat = function(path,cb){
+	var self = this;
+
+	var prefix = this.prefix;
+	var paths = this.fuse;
+	var multicast = true;
+	
+	//NOTES: cat from all mounts.
+	if (multicast) {
+		for ( var i in paths) { 
+			var mount = paths[i];
+			var uri = normalizePath(mount.prefix, path);
+			console.log("mount cat", uri, mount.prefix);
+			
+			mount.cat(uri, function(result, err) {
+				if (err) {
+					console.log("error cat file,", uri, err);
+					return cb(null, err);
+				}
+				
+				cb(result);
+			});
+		}
+		return;
+	}
+	
+	//FIXME add read from a specified fs of union folders.
+	
+}
 
 UnionFio.prototype.asFolder = function(dir, file) {
   var o = { name: file.name };
@@ -150,7 +174,7 @@ UnionFio.prototype.asFolder = function(dir, file) {
 
 UnionFio.prototype.onSubList = function(fio, mount, data) {
   var o = data.data;
-  var uri = normalizePath(mount.prefix, o);
+  var uri = normalizePath(mount.prefix, o.path);
   var lsMime = ["Content-Type:application/json"];
 
   var response = function(files) {
