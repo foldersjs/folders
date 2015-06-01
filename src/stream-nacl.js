@@ -4,7 +4,7 @@
  *
  */
 
-var nacl = require('nacl-stream');
+var nacl = require('./lib/nacl-stream.min'); // require('nacl-stream');
 var util = require("util");
 var Readable = require('stream').Readable;
 var Transform = require('stream').Transform;
