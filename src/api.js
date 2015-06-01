@@ -37,6 +37,10 @@ var Fio = function(baseUri, asDebug, routeImpl) {
 		}
 };
 
+Fio.prototype.fs =
+Fio.fs = function() {
+	return require('./fs');
+};
 
 /*
  *
