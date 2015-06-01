@@ -1,13 +1,13 @@
 {
   "name": "folders",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Synthetic file system for your local and remote servers",
   "repository": {
     "type": "git",
     "url": "git://github.com/foldersjs/folders.git"
   },
   "author": "",
-  "license": "Apache 2.0/MIT Dual Licensed",
+  "license": "(Apache-2.0 OR MIT)",
   "bugs": {
     "url": "https://github.com/foldersjs/folders/issues"
   },
@@ -16,10 +16,10 @@
   "dependencies": {
   },
   "devDependencies": {
-    "gulp": "~3.8.10",
-    "gulp-jshint": "~1.9.0",
-    "gulp-istanbul": "~0.5.0",
-    "gulp-mocha": "~2.0.0",
+    "gulp": "3.x",
+    "gulp-jshint": "1.x",
+    "gulp-istanbul": "0.x",
+    "gulp-mocha": "2.x",
     "gulp-exit": "0.0.2"
   }
 }
