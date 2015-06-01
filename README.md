@@ -1,18 +1,19 @@
 Folders
 =============
 
-This node.js package implements the folders.io synthetic file system.
+The Folders node.js package provides a filesystem abstraction for synthetic file systems.
 
 Folders may be based on a local file system, a remote file system, or another synthetic file system as provided by a module.
 Additional providers are available and can be installed via "npm install folders-modulename".
 
-For example: "npm install folders-ftp" will install an FTP module.
+For example: "npm install folders-ftp" will install an FTP module. The module comes with an FTP client and server,
+enabling Folders to use Folders on a remote system, and to provide access to folders over the FTP protocol to clients.
 
 
 Folders Provider API
 =============
 
-any synthetic file system integrated as a folders-provider must implement following method.
+Folders providers must implement the following methods:
 
 ###Constructor
 
@@ -56,7 +57,7 @@ some options for exist folders provider.
 ```js
 {
 	// the base url address for hdfs instance
-	baseurl : "http://45.55.223.28/webhdfs/v1/data/",
+	baseurl : "http://webhdfs.node/webhdfs/v1/data/",
 
 	// the username to access the hdfs instances
 	username : 'hdfs'
@@ -105,8 +106,38 @@ cat(uri, cb);
 Union Folders API
 =============
 
-Special provider which can serve content from several providers.
+This is a unique interface which can serve content from several providers.
 File systems are listed as named folders in the root directory.
 
+For example, to setup a union file system testing several folders providers:
 
+```sh
+npm install folders
+npm install folders-ftp
+npm install folders-ssh
+```
 
+```js
+var mounts = [
+	{ "stub" : fio.provider("stub") },
+	{ "local" : fio.provider("local") },
+	{ "memory" : fio.provider("memory") },
+	{ "ftp" : fio.provider("ftp", {
+                connectionString : "ftp://test:123456@localhost:3333",
+                enableEmbeddedServer : true
+        }) },
+        { "ssh" : fio.provider("ssh", {
+                connectionString : "ssh://test:123456@localhost:3334",
+                enableEmbeddedServer : true
+        }) }
+];
+
+var Fio = require('folders');
+var unionfs = new ((Fio.union())(fio, mounts, {
+	"view" : "list"
+}));
+
+unionfs.ls('.', function(data) {
+	// will list the five modules listed as root folders.
+});
+```
