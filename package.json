@@ -1,6 +1,6 @@
 {
   "name": "folders",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Synthetic file system for your local and remote servers",
   "repository": {
     "type": "git",
