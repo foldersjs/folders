@@ -74,3 +74,6 @@ Nacl.prototype._flush = function(callback)  {
   this.transform.clean();
   callback();
 };
+
+Nacl.prototype.base =
+Nacl.base = require('./lib/nacl-fast.min');

@@ -13,6 +13,8 @@ var BufferStream = require('./buffer-stream');
 var route = {};
 var registry = {};
 var providers = {};
+
+// FIXME: Route seems to be the remaining optional argument is likely the only argument needed.
 var Fio = function(baseUri, asDebug, routeImpl) {
 		// FIXME: The default implementation could use the memory based backend.
 		routeImpl = routeImpl || route;
