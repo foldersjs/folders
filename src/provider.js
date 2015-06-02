@@ -9,22 +9,39 @@
  */
  
  
-var ProviderFriendly = function(){
-		uuid = uuid || (function() {
-			var id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c){
-				var r = Math.random()*16|0,v=c=='x'?r:r&0x3|0x8;
-				return v.toString(16);
-			});
-			return id;
-                });
-		if(typeof(uuid) == 'string') this.uuid = (function() {
-			return uuid;
-		});
-		else this.uuid = uuid;
+var Fio = require('./api');
+var helpers = require('./util/helpers')
+var route = require('./route')
+var fio = new Fio(null,null,route)
+var subscriberApp = require('./app/subscriberApp')
+
+var ProviderFriendly = function(argv,obj){
+	
+		argv = argv == undefined ? {}:argv;	
+		
+		this.uuid = argv['shareId'] ||  helpers.uuid();
+		
+		var  provider = argv['provider'] || 'stub';
+		
+		switch (provider){
+			
+			case 'stub':
+				provider = Fio.stub()
+				break;
+			case 'local':
+				provider = Fio.local()
+				break;
+				
+		}
+		this.provider = new provider(fio);
+
+		this.o = obj;
 }
 
 
 ProviderFriendly.prototype.fioHandler = function(channel) {
+	var self = this 
+    fio.watch().then(function(channel){
 
 	var routeHandler = { 
 				
@@ -86,8 +103,12 @@ ProviderFriendly.prototype.fioHandler = function(channel) {
 			console.log("cool", channel, shareId, streamId);
 		}
 	}
+	self.o.startProxy(routeHandler)
 
 	console.log("Folders.io channel is active:", channel.channel);
+	subscriberApp(self,channel);
+	
+	})
 
 	// exports
 	// channel, routeHandler

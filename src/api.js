@@ -48,6 +48,7 @@ Fio.fs = function() {
  *
  */
 
+/*
 // FIXME: This seems broken.
 // FIXME: Handle this in a flexible manner.
 Fio.prototype.provider =
@@ -72,6 +73,17 @@ Fio.provider = function(module, opts) {
 	var fn = {create: create};
 	return fn;
 };
+*/
+
+/*
+ * Using this for now 
+ * Until development of 
+ * above function is finished
+ */
+ 
+Fio.provider = function(){
+	return require('./provider')
+}
 
 // NOTES: Union seems to be a good sub to pass any provider through.
 Fio.prototype.union = 

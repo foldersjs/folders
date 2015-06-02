@@ -30,7 +30,8 @@ var StubFs = function(fio) {
     writeMime:["Content-Type:application/json"]
   };
   this.ls = function(data, cb) {
-	cb(stubData.lsData);
+	//cb(stubData.lsData);
+	cb({streamId:data.data.streamId,data:stubData.lsData,headers:stubData.lsMime,shareId:data.shareId},fio)
   };
   this.cat = function(data, cb) {
   	cb({stream:stubData.asData,size:960,file:'stub-file.txt'});
