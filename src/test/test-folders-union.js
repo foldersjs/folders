@@ -30,7 +30,7 @@ var unionfs = new UnionFio(fio, mounts, {
 	"view" : "list"
 });
 
-// test ls
+// // test ls
 unionfs.ls('/', {
 	shareId : "test-share-id",
 	data : {
@@ -45,13 +45,33 @@ unionfs.ls('/', {
 	console.log(files);
 });
 
-// test cat
+// test write
+
+try {
+	var stream = require('fs').createReadStream('./data/test.txt').on('open',
+
+	function() {
+		console.log("stream,", stream);
+		unionfs.write('test_dst.txt', stream, function(result, err) {
+			if (err) {
+				console.error(err);
+				return;
+			}
+
+			console.log(result);
+		});
+	});
+} catch (e) {
+	console.log(e);
+}
+
+// // test cat
 unionfs.cat('./data/test.txt', function(result, err) {
-	if (err){
+	if (err) {
 		console.error(err);
-		return ;
+		return;
 	}
-	
+
 	console.log(result);
 });
 

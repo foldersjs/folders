@@ -49,29 +49,15 @@ LocalFio.prototype.cat = function(path, cb) {
   });
 };
 
-LocalFio.prototype.write = function(data, cb) {
-	var stream = data.data;
-	//var headers = data.headers;
-	var streamId = data.streamId;
-	var shareId = data.shareId;
-	var uri = data.uri;
+LocalFio.prototype.write = function(uri, data, cb) {
 
-	var headers = {
-		"Content-Type" : "application/json"
-	};
-
-	write(uri, stream, function(result, err) {
+	write(uri, data, function(result, err) {
 		if (err){
   		console.error("error in folders-local write,",err);
   		return cb(null, err);
   	}
 		
-		cb({
-			streamId : streamId,
-			data : result,
-			headers : headers,
-			shareId : shareId
-		});
+		cb(result);
 	});
 };
 
@@ -161,12 +147,23 @@ var cat = function(uri, cb) {
 var write = function(uri, data, cb) {
 	try {
 		var file = fs.createWriteStream(uri);
-		file.write(data, function() {
-			file.end(function() {
-				cb("write uri success");
+		
+		if (data instanceof Buffer){
+			file.write(data, function() {
+				file.end(function() {
+					cb("write uri success");
+				});
 			});
-		});
-
+		}else{
+			var errHandle = function(e){
+				cb(null,e.message);
+			};
+			//stream source input, use pipe
+			data.on('error',errHandle)
+				.pipe(file)
+				.on('error',errHandle)
+				.on('end', function() {cb("write uri success");});
+		}
 	} catch (e) {
 		console.error("error in createWriteStream,",e);
 		cb(null, "unable to write uri");

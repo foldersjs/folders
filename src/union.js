@@ -127,6 +127,14 @@ UnionFio.prototype.ls = function(path, data, cb) {
 	}
 };
 
+/**
+ * @param uri, the file uri to cat 
+ * @param cb, callback function. 
+ *
+ * The param of the callback function
+ * @param result, json object including the stream, size, name information. example {stream: readableStream, size: 1024, name: "testfile"}
+ * @param err, the err message of callback, the result param will be null if error, please check the err before using the result information.
+ */
 UnionFio.prototype.cat = function(path,cb){
 	var self = this;
 
@@ -143,7 +151,7 @@ UnionFio.prototype.cat = function(path,cb){
 			
 			mount.cat(uri, function(result, err) {
 				if (err) {
-					console.log("error cat file,", uri, err);
+					console.log("cat file error,", uri, err);
 					return cb(null, err);
 				}
 				
@@ -155,6 +163,52 @@ UnionFio.prototype.cat = function(path,cb){
 	
 	//FIXME add read from a specified fs of union folders.
 	
+}
+
+/**
+ * @param path, string, the path 
+ * @param data, the input data, 'stream.Readable' or 'Buffer'
+ * @param cb, the callback function
+ */
+UnionFio.prototype.write = function(path, data, cb) {
+	var self = this;
+
+	var prefix = this.prefix;
+	var paths = this.fuse;
+	var multicast = true;
+
+	if (multicast) {
+		for ( var i in paths) {
+			var mount = paths[i];
+			var uri = normalizePath(mount.prefix, path);
+			console.log("mount write", uri, mount.prefix);
+
+			var Readable = require('stream').Readable;
+
+			// we first pause the stream from emitting data events
+			if (data instanceof Readable) {
+				data.pause();
+			}
+
+			// write buffer data or pipe the input stream to dest writable stream
+			mount.write(uri, data, function(result, err) {
+				if (err) {
+					console.log("write file error ,", uri, err);
+					return cb(null, err);
+				}
+
+				cb(result);
+			});
+
+			// after set all the dest stream, we resume the stream to pipe data.
+			if (data instanceof Readable) {
+				data.resume();
+			}
+		}
+		return;
+	}
+
+	// FIXME add write to a specified fs of union folders.
 }
 
 UnionFio.prototype.asFolder = function(dir, file) {

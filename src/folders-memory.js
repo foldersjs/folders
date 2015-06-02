@@ -40,24 +40,10 @@ MemoryFio.prototype.cat = function(data, cb) {
   });
 };
 
-MemoryFio.prototype.write = function(data, cb) {
-	var stream = data.data;
-	//var headers = data.headers;
-	var streamId = data.streamId;
-	var shareId = data.shareId;
-	var uri = data.uri;
+MemoryFio.prototype.write = function(uri, data, cb) {
 
-	var headers = {
-		"Content-Type" : "application/json"
-	};
-
-	write(uri, stream, function(result, err) {
-		cb({
-			streamId : streamId,
-			data : result,
-			headers : headers,
-			shareId : shareId
-		});
+	write(uri, data, function(result, err) {
+		cb(result,err);
 	});
 };
 
@@ -143,13 +129,28 @@ var write = function(uri, data, cb) {
 	// NOTES: uri could be setup to be a destination pipe, such as piped writable in Java
 	// FIXME: This implementation can just be re-used from buffer-stream.
 	var len = 0; var chunks = [];
-	data.on('data', function(chunk) {
-		console.log('got %d bytes of data',chunk.length);
+	if (data instanceof Buffer){
+		console.log('folders-memory, write %d bytes of data',chunk.length);
 		len += chunk.length;
 		chunks.push(data);
-	});
-	data.on('end', function() {
-		fileSystem[uri] = { size: len, data: chunks };
-		cb(null, "write uri success");
-	});
+		fileSystem[uri] = {size:len, data:chunks};
+		cb("write uri success");
+	}else{
+		//Readable stream input
+		data.on('data', function(chunk) {
+			console.log('folders-memory, write %d bytes of data',chunk.length);
+			len += chunk.length;
+			chunks.push(data);
+		});
+		data.on('error', function(e){
+			//NOTES may want to delete the item from fileSystem
+			console.error("folders-memory, write error, ", uri);
+			cb(null, e.message);
+		});
+		data.on('end', function() {
+			fileSystem[uri] = { size: len, data: chunks };
+			console.log("folders-memory, write end,",uri)
+			cb("write uri success");
+		});
+	}
 };

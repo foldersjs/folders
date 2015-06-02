@@ -104,6 +104,27 @@ cat(uri, cb);
  cb(result,err)
 ```
 
+### write
+
+write file to file system
+
+```js
+/**
+ * @param path, string, the path 
+ * @param data, the input data, 'stream.Readable' or 'Buffer'
+ * @param cb, the callback function
+ */
+write(path,data,cb);
+
+//the callback function
+/**
+ * @param result, string message, example, "write success"
+ * @param err, the err message of callback, the result param will be null if error, please check the err before using the result information.
+  cb(result,err)
+ */
+
+``` 
+
 Union Folders API
 =============
 

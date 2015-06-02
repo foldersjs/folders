@@ -33,16 +33,17 @@ var StubFs = function(fio) {
 	cb(stubData.lsData);
   };
   this.cat = function(data, cb) {
-  	cb({stream:stubData.asData,size:960,file:'stub-file.txt'})
+  	cb({stream:stubData.asData,size:960,file:'stub-file.txt'});
 //  	cb({streamId: data.data.streamId, data: stubData.asData,
 //		headers: stubData.asMime, shareId: data.shareId});
   };
   
-  this.write = function(data, cb){
-  	cb({streamId: data.data.streamId, data:stubData.writeData,
-  		headers:stubData.writeMime, shareId:data.shareId});
+  this.write = function(uri, data,cb){
+  	cb('write data success');
+//  	cb({streamId: data.data.streamId, data:stubData.writeData,
+//  		headers:stubData.writeMime, shareId:data.shareId});
   };
   
-  
+
 };
 module.exports = StubFs;
