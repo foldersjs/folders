@@ -64,7 +64,7 @@ UnionFio.prototype.onList = function(data) {
 };
 
 
-UnionFio.prototype.ls = function(path, data, cb) {
+UnionFio.prototype.ls = function(path, cb) {
 	var self = this;
 
 	var fio = this.fio;
@@ -84,7 +84,7 @@ UnionFio.prototype.ls = function(path, data, cb) {
 			// self.onSubList(self.fio, paths[i], data);
 			// FIXME: check if we want to send the list from all mounts in one time using cb() 
 			var mount = paths[i];
-			var uri = normalizePath(mount.prefix, data.data.path);
+			var uri = normalizePath(mount.prefix, path);
 			console.log("mount ls ", uri, mount.prefix);
 			mount.ls(uri, function(files, err) {
 				if (err) {

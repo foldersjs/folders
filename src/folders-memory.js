@@ -120,6 +120,7 @@ var cat = function(uri, cb) {
     var size = fileSystem[uri].size;
     var name = path.basename(uri);
     // FIXME: Adapt BufferStream to handle arrays of buffer.
+    var BufferStream = require('./buffer-stream');
     cb({stream: new BufferStream(fileSystem[uri].data), size: size, name: name});
 };
 
