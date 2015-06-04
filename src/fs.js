@@ -8,6 +8,7 @@
 // FIXME: May have some overlap with ssh copyright, fix if necessary..
 
 var constants = require('constants');
+var path = require('path')
 
 var LocalFs = require('./folders-local')
 //testing purposes only 
@@ -67,24 +68,50 @@ var FoldersFs = function() {
 FoldersFs.prototype.stat = function(uri , callback) {
 
 
-/*
- * A normal stat record 
- { dev: -2072562183,
-  mode: 16822,
-  nlink: 1,
-  uid: 0,
-  gid: 0,
-  rdev: 0,
-  blksize: undefined,
-  ino: 1407374883769160,
-  size: 0,
-  blocks: undefined,
-  atime: Tue Jun 02 2015 15:56:13 GMT+0530 (India Standard Time),
-  mtime: Tue Jun 02 2015 15:56:13 GMT+0530 (India Standard Time),
-  ctime: Tue Jun 02 2015 15:56:13 GMT+0530 (India Standard Time),
-  birthtime: Tue Jun 02 2015 13:22:25 GMT+0530 (India Standard Time) }
- */
 
+//{ mode, isDirectory(), size, mtime }
+ 
+  uri = path.resolve(path.normalize(uri));
+  var dirname = path.dirname(uri)
+  var basename = path.basename(uri)
+  
+  provider.ls(dirname,function(res,err){
+	  
+	  if (!res){
+		  console.log("error in fs.js stat() ",err)
+		  return callback(null,err)
+		  
+	  }
+	  
+	 var stats 
+	 for (var i = 0 ; i < res.length ;++i){
+		 if (basename == res[i].name){
+			 
+			 stats = res[i]
+			 
+		 }
+	     
+		}
+		
+	if(stats){
+			
+		stats.mtime = stats.modificationTime
+		stats.mode = folder_attr.mode
+		stats.isDirectory = function(){
+				
+		if (stats.type != 'text/plain')
+			return false;
+		return true;
+				
+		} 
+		
+		callback(stats)
+			
+	}
+		
+		
+	  
+    })
 
 };
 
@@ -187,9 +214,11 @@ FoldersFs.prototype.createReadStream = function(path,callback){
 	
 }
 
-FoldersFs.prototype.createWriteStream = function(path,data,callback){
+FoldersFs.prototype.createWriteStream = function(path,callback){
 	
-	provider.write(path,data,function(res,err){
+	var pass = new require('stream').PassThrough()
+	
+	provider.write(path,pass,function(res,err){
 		
 		if (!res){
 			
@@ -197,51 +226,91 @@ FoldersFs.prototype.createWriteStream = function(path,data,callback){
 			return callback(null,err)
 			
 		}
-		callback(res)
+
+		
+		console.log('end')
 		
 	})
+	
+	callback(pass)
+	
 }
 
 // May be a NOOP with some providers, though a temporary session could exit.
 FoldersFs.prototype.mkdir = function(uri, callback) {
 
-	callback(new Error('not implemented'));	
+	callback(null,new Error('not implemented'));	
 
 };
 
 FoldersFs.prototype.open = function(uri, flags, modeOrCallback, callback) {
+	  var self = this 
+	// only implementing flags for reading or writing
+	//	duplex mode not available 
+	
+	if (flags in ['w']){
 
-	  callback(new Error('not implemented'));	
+	this.createWriteStream(uri,function(res,err){
+		
+		if (!res){
+			
+			console.log("error in fs.js open() ",err)
+			return callback(null,err)
+			
+		}
+		
+		callback(res.stream.id)
+		
+	})
+	  
+	  
+	}
+	 else {
+		 
+		 provider.cat(uri,function(res,err){
+		  
+		  if (!res){
+			  
+			  console.log("error in fs.js open()",err)
+			  return callback(null,err)
+			  
+		  }
+		  
+		  callback(res.stream.fd)
+		  
+	  })
+	 }  
+	  
 
 };
 
 // Likely a NOOP
 FoldersFs.prototype.close = function(fd, callback) {
 
- callback(new Error('not implemented'));	
-};
+ callback(null,new Error('not implemented'));	
+
+ };
 
 
 
 
 FoldersFs.prototype.unlink = function(path, callback) {
 
-	callback(new Error('not implemented'));	
+	callback(null,new Error('not implemented'));	
 
 };
 
 
 FoldersFs.prototype.rmdir = function(path, callback) {
 
-	callback(new Error('not implemented'));	
+	callback(null,new Error('not implemented'));	
 
 };
 
 
 FoldersFs.prototype.rename = function(path, newPath, callback) {
-	callback(new Error('not implemented'));	
+	callback(null,new Error('not implemented'));	
 
 }
 
 module.exports = FoldersFs;
-
