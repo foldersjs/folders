@@ -19,7 +19,7 @@ LocalFio.prototype.normalizePath = function(uri) {
     var preuri = uri.substr(uri.indexOf('@')+1).substr(prefix.length);
     uri = preuri;
   }
-  console.log({prefix: prefix, op: op, path: uri, pre: preuri});
+  console.log("normalizePath in folders-local,\n",{prefix: prefix, op: op, path: uri/*, pre: preuri*/});
   var uri = path.resolve(path.normalize(uri || "."));
   return uri;
 };
@@ -49,13 +49,13 @@ LocalFio.prototype.cat = function(path, cb) {
 };
 
 LocalFio.prototype.write = function(uri, data, cb) {
+	var uri = this.normalizePath(uri);
 
 	write(uri, data, function(result, err) {
 		if (err){
   		console.error("error in folders-local write,",err);
   		return cb(null, err);
   	}
-		
 		cb(result);
 	});
 };
@@ -63,7 +63,7 @@ LocalFio.prototype.write = function(uri, data, cb) {
 LocalFio.prototype.ls = function(uri, cb) {
   var self = this;
 
-  uri = path.resolve(path.normalize(uri || "."));
+  var uri = this.normalizePath(uri);
 
   fs.stat(uri, function(err, stats) {
     if(err) {
@@ -153,15 +153,18 @@ var write = function(uri, data, cb) {
 					cb("write uri success");
 				});
 			});
-		}else{
-			var errHandle = function(e){
-				cb(null,e.message);
+		} else {
+			var errHandle = function(e) {
+				console.log("error in pipe write ");
+				cb(null, e.message);
 			};
-			//stream source input, use pipe
-			data.on('error',errHandle)
-				.pipe(file)
-				.on('error',errHandle)
-				.on('end', function() {cb("write uri success");});
+			// stream source input, use pipe
+			data.on('error', errHandle).pipe(file).on('error', errHandle);
+
+			data.on('end', function() {
+				file.end();
+				cb("write uri success");
+			});
 		}
 	} catch (e) {
 		console.error("error in createWriteStream,",e);
