@@ -120,8 +120,8 @@ write(path,data,cb);
 /**
  * @param result, string message, example, "write success"
  * @param err, the err message of callback, the result param will be null if error, please check the err before using the result information.
-  cb(result,err)
  */
+cb(result,err);
 
 ``` 
 

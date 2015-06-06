@@ -178,17 +178,16 @@ UnionFio.prototype.write = function(path, data, cb) {
 	var multicast = true;
 
 	if (multicast) {
+		var Readable = require('stream').Readable;
+		// we first pause the stream from emitting data events
+		if (data instanceof Readable) {
+			data.pause();
+		}
+
 		for ( var i in paths) {
 			var mount = paths[i];
 			var uri = normalizePath(mount.prefix, path);
 			console.log("mount write", uri, mount.prefix);
-
-			var Readable = require('stream').Readable;
-
-			// we first pause the stream from emitting data events
-			if (data instanceof Readable) {
-				data.pause();
-			}
 
 			// write buffer data or pipe the input stream to dest writable stream
 			mount.write(uri, data, function(result, err) {
@@ -199,12 +198,13 @@ UnionFio.prototype.write = function(path, data, cb) {
 
 				cb(result);
 			});
-
-			// after set all the dest stream, we resume the stream to pipe data.
-			if (data instanceof Readable) {
-				data.resume();
-			}
 		}
+
+		// after set all the dest stream, we resume the stream to pipe data.
+		if (data instanceof Readable) {
+			data.resume();
+		}
+
 		return;
 	}
 

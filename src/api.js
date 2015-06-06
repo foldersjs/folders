@@ -57,7 +57,7 @@ Fio.provider = function(module, opts) {
 			try {
 				if (  ['stub','local','memory'].indexOf(module) > -1){
 					providers[module] = require("./folders-" + module);
-				}else	{ //external import, make sure add dependence in package.json 
+				}else	{ //external import, make sure add dependence, npm install folders-module
 					providers[module] = require("folders-" + module);
 				}
 			} catch(e) { 

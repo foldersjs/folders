@@ -35,6 +35,5 @@ var unionfs = new UnionFio(fio, mounts, {
 	"view" : "list"
 });
 
-var FoldersLocal = require('../folders-local');
 var foldersTest = new FoldersTest(unionfs);
 foldersTest.test('.');
