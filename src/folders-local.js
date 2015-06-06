@@ -7,8 +7,7 @@
 var fs = require('fs');
 var path = require('path');
 
-var LocalFio = function(fio, prefix) {
-  this.fio = fio;
+var LocalFio = function(prefix) {
   this.prefix = prefix || "/http_window.io_0:local/";
 };
 module.exports = LocalFio;

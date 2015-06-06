@@ -59,6 +59,10 @@ UnionFio.prototype.onList = function(data) {
   var lsMime = ["Content-Type:application/json"];
 
   this.ls(uri, data, function(files, err) {
+  	if (err){
+  		return fio.post(o.streamId, null, lsMime, data.shareId);
+  	}
+  	
     fio.post(o.streamId, JSON.stringify(files), lsMime, data.shareId);
   });
 };

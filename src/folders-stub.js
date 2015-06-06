@@ -10,9 +10,9 @@
  *
  */
 
-var StubFs = function(fio) {
-  this.fio = fio;
-
+var StubFs = function(prefix) {
+	this.prefix = prefix || "/http_window.io_0:stub/";
+	
   var stubData = {
     lsMime: ["Content-Type:application/json"],
     lsData: [{"name":"stub-file.txt",

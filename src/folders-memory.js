@@ -7,8 +7,7 @@
 var fs = require('fs');
 var path = require('path');
 
-var MemoryFio = function(fio, prefix) {
-  this.fio = fio;
+var MemoryFio = function(prefix) {
   this.prefix = prefix || "/http_window.io_0:memory/";
 };
 module.exports = MemoryFio;
