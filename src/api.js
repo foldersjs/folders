@@ -42,6 +42,10 @@ Fio.fs = function() {
 	return require('./fs');
 };
 
+Fio.prototype.router =
+Fio.router = function() {
+	return require('./provider');
+};
 /*
  *
  * Providers receive messages from watch channels and reply by post.

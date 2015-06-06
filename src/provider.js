@@ -9,7 +9,8 @@
  */
  
  
-var ProviderFriendly = function(){
+var ProviderFriendly = function(fio, uuid){
+		this.fio = fio;
 		uuid = uuid || (function() {
 			var id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c){
 				var r = Math.random()*16|0,v=c=='x'?r:r&0x3|0x8;
@@ -23,9 +24,8 @@ var ProviderFriendly = function(){
 		else this.uuid = uuid;
 }
 
-
 ProviderFriendly.prototype.fioHandler = function(channel) {
-
+	var fio = this.fio;
 	var routeHandler = { 
 				
 		getCurrentSession: function() {

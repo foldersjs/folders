@@ -12,8 +12,9 @@
 
 var StubFs = function(prefix) {
 	this.prefix = prefix || "/http_window.io_0:stub/";
+}
 	
-  var stubData = {
+StubFs.prototype.stubData = {
     lsMime: ["Content-Type:application/json"],
     lsData: [{"name":"stub-file.txt",
       "uri":"#/67ee0a44-5eee-40a6-a50a-96d4665e554e/stub-file.txt",
@@ -28,22 +29,22 @@ var StubFs = function(prefix) {
     asData: (new Array(960 + 1)).join("Z"),
     writeData:[{"name":"stub-file.txt"}],
     writeMime:["Content-Type:application/json"]
-  };
-  this.ls = function(data, cb) {
-	cb(stubData.lsData);
-  };
-  this.cat = function(data, cb) {
-  	cb({stream:stubData.asData,size:960,file:'stub-file.txt'});
+};
+
+StubFs.prototype.ls = function(path, cb) {
+	cb(this.stubData.lsData);
+};
+
+StubFs.prototype.cat = function(path, cb) {
+  	cb({stream:this.stubData.asData,size:960,name:'stub-file.txt',meta: { mime:"text/plain", date: (0+new Date()) }});
 //  	cb({streamId: data.data.streamId, data: stubData.asData,
 //		headers: stubData.asMime, shareId: data.shareId});
-  };
+};
   
-  this.write = function(uri, data,cb){
+StubFs.prototype.write = function(uri, data, cb){
   	cb('write data success');
 //  	cb({streamId: data.data.streamId, data:stubData.writeData,
 //  		headers:stubData.writeMime, shareId:data.shareId});
-  };
-  
-
 };
+  
 module.exports = StubFs;
