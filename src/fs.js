@@ -10,9 +10,7 @@
 var constants = require('constants');
 var path = require('path')
 
-var LocalFs = require('./folders-local')
-//testing purposes only 
-var provider = new LocalFs()
+
 
 function Stats(obj) {
 	this.mode = (obj && obj.mode);
@@ -57,8 +55,9 @@ var folder_attr = {
 	mtime : (Date.now() / 1000) | 0
 };
 
-var FoldersFs = function() {
+var FoldersFs = function(provider) {
 
+this.provider = provider
 
 };
 
@@ -67,6 +66,7 @@ var FoldersFs = function() {
 
 FoldersFs.prototype.stat = function(uri , callback) {
 
+ var self = this
 
 
 //{ mode, isDirectory(), size, mtime }
@@ -75,11 +75,11 @@ FoldersFs.prototype.stat = function(uri , callback) {
   var dirname = path.dirname(uri)
   var basename = path.basename(uri)
   
-  provider.ls(dirname,function(res,err){
+  self.provider.ls(dirname,function(res,err){
 	  
 	  if (!res){
 		  console.log("error in fs.js stat() ",err)
-		  return callback(null,err)
+		  return callback(err,null)
 		  
 	  }
 	  
@@ -91,7 +91,7 @@ FoldersFs.prototype.stat = function(uri , callback) {
 			 
 		 }
 	     
-		}
+	}
 		
 	if(stats){
 			
@@ -105,7 +105,7 @@ FoldersFs.prototype.stat = function(uri , callback) {
 				
 		} 
 		
-		callback(stats)
+		callback(null,stats)
 			
 	}
 		
@@ -115,62 +115,92 @@ FoldersFs.prototype.stat = function(uri , callback) {
 
 };
 
-FoldersFs.prototype.readFile = function(filename,callback){
+FoldersFs.prototype.readFile = function(path,callback){
 	
+	 
 	//Asynchronously reads the entire contents of a file. 
 	
-	provider.cat(filename,function(res,err){
+	var self = this
+	 
+	  self.provider.cat(path, function(res,err) {
+
+
+			if (!res){
+				
+				console.log("error in folderFs createReadStream() ",err)
+				return callback(err)
+				
+			}
+			
+
+
+
+
+
+
+
+
+
+
+
+
+			
+			var stream = res.stream
+
+			var data = null;	
+			stream.on('data',function(chunk){
+				
+				data+=chunk
+				
+			})
+			
+
+
+			stream.on('end',function(){
+				
+				callback(null,data)
+			})
+					
+			stream.on('error',function(err){
+				
+				console.log("error in fs.js readFile() ",err)
+				callback(err)
+			})
+			
+	  }) 
+
+
+
 		
-		if (!res){
-			
-			console.log("error in fs readFile() ",err)
-			return callback(null,err)
-		}
-		
-		var file = res.stream
-		
-		if (file.isPaused()){
-			file.resume()
-		}
-		
-		var data ;
-		file.on('data',function(chunk){
-			
-			data+=chunk
-			
-		})
-		
-		file.on('end',function(){
-			
-			callback(data)
-			
-		})
-		
-		file.on('error',function(){
-			
-			
-			console.log("error in fs readFile() ",err)
-			return callback(null,err)
-			
-		})
-		
-	})
+
+
+
+
+
+
+
+
+
 	
 }
 
-Folders.prototype.writeFile = function(filename,data,callback){
+FoldersFs.prototype.writeFile = function(filename,data,callback){
 	
 	// Asynchronously writes data to a file, replacing 
 	// the file if it already exists. data can be a string or a buffer.
 	
-	provider.write(filename,data,function(res,err){
+	
+	
+	var self = this
+	
+	self.provider.write(filename,data,function(res,err){
 		
 		if (!res){
 			console.log("error in fs writeFile",err)
-			return callback(null,err)
+			return callback(err)
 			
 		}
-		callback(res)
+		callback(null,res)
 		
 	})
 	
@@ -179,19 +209,20 @@ Folders.prototype.writeFile = function(filename,data,callback){
 
 FoldersFs.prototype.readdir = function(uri,callback){
 	
-	 provider.ls(uri,function(res,error){
+	 var self = this
+	 self.provider.ls(uri,function(res,error){
 		 
 		 if (!res){
 			 console.log("error in fs.js readdir ",err)
-			 return callback(null,err)
+			 return callback(err)
 		 }
 		 
 		 var files = []
 
 		 for (var i = 0 ; i < res.length ; ++i)
 				files[i] = res[i].name	
-			
-		callback(files)	
+
+		callback(null,files)	
 		 
 	 })
 };
@@ -199,42 +230,54 @@ FoldersFs.prototype.readdir = function(uri,callback){
 
 
 // convert from Folders cat to fs read stream
-FoldersFs.prototype.createReadStream = function(path,callback){
+FoldersFs.prototype.createReadStream = function(path){
 	
-	  provider.cat(path, function(res,err) {
+	
+	 var self = this
+	 //return self.provider.cat(path)
+	 
+	 var pass =  new require('stream').PassThrough()
+	
+	  self.provider.cat(path, function(res,err) {
 
 			if (!res){
 				
 				console.log("error in folderFs createReadStream() ",err)
-				return (null,err)
+				return callback(err)
 				
 			}
-	  callback(res.stream); 
+			
+			
+			var stream = res.stream
+			
+			stream.pipe(pass)
+			
+			
+
 	  }) 
 	
+	return pass
 }
 
-FoldersFs.prototype.createWriteStream = function(path,callback){
-	
-	var pass = new require('stream').PassThrough()
-	
-	provider.write(path,pass,function(res,err){
-		
-		if (!res){
-			
-			console.log("error in folderFs createWriteStream ",err)
-			return callback(null,err)
-			
-		}
 
+FoldersFs.prototype.createWriteStream = function(path,options){
+	
+	var self = this
+	
+	var pass =  new require('stream').PassThrough()
+	
+    self.provider.write(path,pass,function(res){
 		
-		console.log('end')
+		console.log(res)
+		
 		
 	})
 	
-	callback(pass)
+	return pass 
+
 	
 }
+
 
 // May be a NOOP with some providers, though a temporary session could exit.
 FoldersFs.prototype.mkdir = function(uri, callback) {
@@ -250,16 +293,16 @@ FoldersFs.prototype.open = function(uri, flags, modeOrCallback, callback) {
 	
 	if (flags in ['w']){
 
-	this.createWriteStream(uri,function(res,err){
+	self.createWriteStream(uri,function(res,err){
 		
 		if (!res){
 			
 			console.log("error in fs.js open() ",err)
-			return callback(null,err)
+			return callback(err)
 			
 		}
 		
-		callback(res.stream.id)
+		callback(null,res.stream.id)
 		
 	})
 	  
@@ -267,16 +310,16 @@ FoldersFs.prototype.open = function(uri, flags, modeOrCallback, callback) {
 	}
 	 else {
 		 
-		 provider.cat(uri,function(res,err){
+		 self.provider.cat(uri,function(res,err){
 		  
 		  if (!res){
 			  
 			  console.log("error in fs.js open()",err)
-			  return callback(null,err)
+			  return callback(err)
 			  
 		  }
 		  
-		  callback(res.stream.fd)
+		  callback(null,res.stream.fd)
 		  
 	  })
 	 }  
