@@ -24,10 +24,10 @@ MemoryFio.prototype.normalizePath = function(uri) {
   return uri;
 };
 
-MemoryFio.prototype.cat = function(data, cb) {
+MemoryFio.prototype.cat = function(path, cb) {
 
   // FIXME: This method is repeated often and is fragile.
-  var uri = this.normalizePath(data);
+  var uri = this.normalizePath(path);
 
   cat(uri, function(result, err) {
     if (err){
@@ -39,17 +39,19 @@ MemoryFio.prototype.cat = function(data, cb) {
   });
 };
 
-MemoryFio.prototype.write = function(uri, data, cb) {
+MemoryFio.prototype.write = function(path, data, cb) {
 
+	var uri = this.normalizePath(path);
+	
 	write(uri, data, function(result, err) {
 		cb(result,err);
 	});
 };
 
-MemoryFio.prototype.ls = function(uri, cb) {
+MemoryFio.prototype.ls = function(path, cb) {
   var self = this;
 
-  uri = path.resolve(path.normalize(uri || "."));
+  var uri = this.normalizePath(path);
 
 // FIXME: Not implemented yet.
 
@@ -112,15 +114,18 @@ MemoryFio.prototype.asFolders = function(dir, files) {
 
 var cat = function(uri, cb) {
     if(!(uri in fileSystem)) {
+    	console.error("file not exsit");
       cb(null, {error: "not found"});
       return;
     }
     // cb(null, "refused to cat directory");
+    console.log(fileSystem[uri].data);
+    console.log(fileSystem[uri].data instanceof Array);
     var size = fileSystem[uri].size;
     var name = path.basename(uri);
     // FIXME: Adapt BufferStream to handle arrays of buffer.
     var BufferStream = require('./buffer-stream');
-    cb({stream: new BufferStream(fileSystem[uri].data), size: size, name: name});
+    cb({stream: new BufferStream(null,fileSystem[uri].data), size: size, name: name});
 };
 
 var fileSystem = {};
@@ -130,7 +135,7 @@ var write = function(uri, data, cb) {
 	// FIXME: This implementation can just be re-used from buffer-stream.
 	var len = 0; var chunks = [];
 	if (data instanceof Buffer){
-		console.log('folders-memory, write %d bytes of data',chunk.length);
+		console.log('folders-memory, write %d bytes of data',chunk.length,uri);
 		len += chunk.length;
 		chunks.push(data);
 		fileSystem[uri] = {size:len, data:chunks};
@@ -138,7 +143,7 @@ var write = function(uri, data, cb) {
 	}else{
 		//Readable stream input
 		data.on('data', function(chunk) {
-			console.log('folders-memory, write %d bytes of data',chunk.length);
+			console.log('folders-memory, write %d bytes of data',chunk.length,uri);
 			len += chunk.length;
 			chunks.push(data);
 		});
