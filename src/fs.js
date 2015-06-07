@@ -3,6 +3,7 @@
  * Minimal compatibility with node.js fs interfaces.
  * See folders-local for the inverse.
  *
+ * Partial implementation of: https://nodejs.org/api/fs.html
  */
 
 // FIXME: May have some overlap with ssh copyright, fix if necessary..
@@ -66,195 +67,139 @@ this.provider = provider
 
 FoldersFs.prototype.stat = function(uri , callback) {
 
- var self = this
+	var self = this;
+
 
 
 //{ mode, isDirectory(), size, mtime }
- 
-  uri = path.resolve(path.normalize(uri));
-  var dirname = path.dirname(uri)
-  var basename = path.basename(uri)
-  
-  self.provider.ls(dirname,function(res,err){
+
+	uri = path.normalize(uri);
+	var dirname = path.dirname(uri)
+	var basename = path.basename(uri)
+
+// NOTES: Upstream could apparently use stat() style method to always return one result.
+// NOTES: We could cache these results as node FS pattern is to run readdir then stat on each result.
+
+
+  self.provider.ls(dirname, function(res,err) {
+
+	if(uri == ".") {
+		callback(null, new Stats(folder_attr));
+		return;
+	}
+
+
+	if (!res) {
+		console.log("error in fs.js stat() ",err);
+		return callback(err,null);
+	}
 	  
-	  if (!res){
-		  console.log("error in fs.js stat() ",err)
-		  return callback(err,null)
-		  
-	  }
-	  
-	 var stats 
-	 for (var i = 0 ; i < res.length ;++i){
-		 if (basename == res[i].name){
-			 
-			 stats = res[i]
-			 
+	var stats;
+	for (var i = 0 ; i < res.length ;++i) {
+		 if (basename == res[i].name) {
+			stats = res[i];
+			break;
 		 }
-	     
 	}
-		
-	if(stats){
-			
-		stats.mtime = stats.modificationTime
-		stats.mode = folder_attr.mode
-		stats.isDirectory = function(){
-				
-		if (stats.type != 'text/plain')
-			return false;
-		return true;
-				
-		} 
-		
-		callback(null,stats)
-			
+
+	if(stats) {
+		stats.mtime = stats.modificationTime;
+		stats.mode = folder_attr.mode;
+		stats.isDirectory = function() {
+			if (stats.type != 'text/plain')
+				return false;
+			return true;
+		};
+		return callback(null,stats);
 	}
-		
-		
-	  
-    })
+	callback("file not found", null);
+    });
 
 };
 
 FoldersFs.prototype.readFile = function(path,callback){
-	
-	 
-	//Asynchronously reads the entire contents of a file. 
-	
+	// Asynchronously read the entire contents of a file. 
+
 	var self = this
-	 
-	  self.provider.cat(path, function(res,err) {
+	self.provider.cat(path, function(res,err) {
 
-
-			if (!res){
-				
-				console.log("error in folderFs createReadStream() ",err)
-				return callback(err)
-				
-			}
-			
-
-
-
-
-
-
-
-
-
-
-
-
-			
-			var stream = res.stream
-
-			var data = null;	
-			stream.on('data',function(chunk){
-				
-				data+=chunk
-				
-			})
-			
-
-
-			stream.on('end',function(){
-				
-				callback(null,data)
-			})
-					
-			stream.on('error',function(err){
-				
-				console.log("error in fs.js readFile() ",err)
-				callback(err)
-			})
-			
-	  }) 
-
-
-
+		if (!res) {
+			console.log("error in folderFs createReadStream() ",err);
+			return callback(err);
+		}
 		
+		var stream = res.stream;
 
+		var data = null;	
+		stream.on('data', function(chunk) {
+			data+=chunk;
+		});
+		stream.on('end', function(){
+			callback(null,data);
+		});
+		stream.on('error', function(err) {
+			console.log("error in fs.js readFile() ",err);
+			callback(err);
+		});
 
-
-
-
-
-
-
-
-	
-}
+	});
+};
 
 FoldersFs.prototype.writeFile = function(filename,data,callback){
-	
+
 	// Asynchronously writes data to a file, replacing 
 	// the file if it already exists. data can be a string or a buffer.
-	
-	
-	
-	var self = this
-	
-	self.provider.write(filename,data,function(res,err){
-		
-		if (!res){
-			console.log("error in fs writeFile",err)
-			return callback(err)
-			
+	var self = this;
+	self.provider.write(filename, data, function(res,err) {
+		if(!res) {
+			console.log("error in fs writeFile",err);
+			return callback(err);
 		}
-		callback(null,res)
-		
-	})
-	
-	
+		callback(null,res);
+	});
+
 }
 
+// NOTES: Consider a result cache as stat is likely to be called on each result.
 FoldersFs.prototype.readdir = function(uri,callback){
-	
-	 var self = this
-	 self.provider.ls(uri,function(res,error){
-		 
-		 if (!res){
-			 console.log("error in fs.js readdir ",err)
-			 return callback(err)
-		 }
-		 
-		 var files = []
 
-		 for (var i = 0 ; i < res.length ; ++i)
-				files[i] = res[i].name	
+	 var self = this;
+	 self.provider.ls(uri, function(res, error) {
 
-		callback(null,files)	
-		 
-	 })
+		if (!res) {
+			console.log("error in fs.js readdir ",err);
+			return callback(err);
+		}
+
+		var files = [];
+
+		for (var i=0 ; i<res.length; i++) {
+			files[i] = res[i].name;
+		}
+
+		callback(null,files);
+
+	 });
 };
 
 
 
 // convert from Folders cat to fs read stream
 FoldersFs.prototype.createReadStream = function(path){
-	
-	
-	 var self = this
-	 //return self.provider.cat(path)
-	 
-	 var pass =  new require('stream').PassThrough()
-	
-	  self.provider.cat(path, function(res,err) {
 
-			if (!res){
-				
-				console.log("error in folderFs createReadStream() ",err)
-				return callback(err)
-				
-			}
-			
-			
-			var stream = res.stream
-			
-			stream.pipe(pass)
-			
-			
+	var self = this;
+	//return self.provider.cat(path)
 
-	  }) 
+	var pass =  new require('stream').PassThrough();
+
+	self.provider.cat(path, function(res,err) {
+		if (!res) {
+			console.log("error in folderFs createReadStream() ",err);
+			return callback(err);
+		}
+		var stream = res.stream;
+		stream.pipe(pass);
+	}); 
 	
 	return pass
 }
