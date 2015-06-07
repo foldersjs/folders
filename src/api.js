@@ -1,5 +1,5 @@
 /*
- * Folders.io connectors and examples
+ * Folders API entry point.
  *
  * Dual-licensed by folders.io:
  * http://opensource.org/licenses/MIT
@@ -19,7 +19,7 @@ var Fio = function(baseUri, asDebug, routeImpl) {
 		// FIXME: The default implementation could use the memory based backend.
 		routeImpl = routeImpl || route;
 		if(route !== routeImpl) route = routeImpl;
-		baseUri = baseUri || "http://window.io";
+		baseUri = baseUri || "";
 		asDebug = asDebug || false;
 		this.baseUri = baseUri;
 
