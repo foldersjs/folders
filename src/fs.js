@@ -106,7 +106,7 @@ FoldersFs.prototype.stat = function(uri , callback) {
 		stats.mtime = stats.modificationTime;
 		stats.mode = folder_attr.mode;
 		stats.isDirectory = function() {
-			if (stats.type != 'text/plain')
+			if (stats.type == 'text/plain') //FIXME: why this hardcoded!
 				return false;
 			return true;
 		};
@@ -162,7 +162,6 @@ FoldersFs.prototype.writeFile = function(filename,data,callback){
 
 // NOTES: Consider a result cache as stat is likely to be called on each result.
 FoldersFs.prototype.readdir = function(uri,callback){
-
 	 var self = this;
 	 self.provider.ls(uri, function(res, error) {
 
@@ -176,7 +175,6 @@ FoldersFs.prototype.readdir = function(uri,callback){
 		for (var i=0 ; i<res.length; i++) {
 			files[i] = res[i].name;
 		}
-
 		callback(null,files);
 
 	 });

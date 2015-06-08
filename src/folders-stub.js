@@ -18,8 +18,11 @@ StubFs.prototype.stubData = {
     lsMime: ["Content-Type:application/json"],
     lsData: [{"name":"stub-file.txt",
       "uri":"#/67ee0a44-5eee-40a6-a50a-96d4665e554e/stub-file.txt",
-      "modificationTime":"1378590055000","fullPath":"/stub-file.txt",
-      "size":"960","extension":"txt","type":"text/plain"}],
+      //"modificationTime":"1378590055000",
+	  "modificationTime": "Mon, 10 Oct 2011 23:24:11 GMT",
+	  "fullPath":"/stub-file.txt",
+      "size":"960","extension":"txt",
+	  "type":"text/plain"}],
     asMime: [
       "X-File-Date:2013-09-07T21:40:55.000Z",
       "X-File-Name:stub-file.txt",
