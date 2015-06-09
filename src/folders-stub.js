@@ -9,6 +9,7 @@
  *  The text file has 960 bytes of the letter "Z".
  *
  */
+var Readable = require('stream').Readable
 
 var StubFs = function(prefix) {
 	this.prefix = prefix || "/http_window.io_0:stub/";
@@ -29,7 +30,12 @@ StubFs.prototype.stubData = {
       "X-File-Size:960",
       "X-File-Type:text/plain"
     ],
-    asData: (new Array(960 + 1)).join("Z"),
+    asData: function() {
+		var s = new Readable();
+		s.push((new Array(960 + 1)).join("Z"));
+		s.push(null);
+		return s;
+	},
     writeData:[{"name":"stub-file.txt"}],
     writeMime:["Content-Type:application/json"]
 };
@@ -39,7 +45,7 @@ StubFs.prototype.ls = function(path, cb) {
 };
 
 StubFs.prototype.cat = function(path, cb) {
-  	cb({stream:this.stubData.asData,size:960,name:'stub-file.txt',meta: { mime:"text/plain", date: (0+new Date()) }});
+  	cb({stream:this.stubData.asData(),size:960,name:'stub-file.txt',meta: { mime:"text/plain", date: (0+new Date()) }});
 //  	cb({streamId: data.data.streamId, data: stubData.asData,
 //		headers: stubData.asMime, shareId: data.shareId});
 };
