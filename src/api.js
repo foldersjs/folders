@@ -9,7 +9,7 @@
 
 // todo: close down routes for garbage collection
 
-var BufferStream = require('./buffer-stream');
+var BufferStream = require('./stream-buffer');
 var route = {};
 var registry = {};
 var providers = {};

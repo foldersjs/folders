@@ -6,6 +6,8 @@
 
 var fs = require('fs');
 var path = require('path');
+// FIXME: Adapt BufferStream to handle arrays of buffer.
+var BufferStream = require('./stream-buffer');
 
 var MemoryFio = function(prefix) {
   this.prefix = prefix || "/http_window.io_0:memory/";
@@ -123,8 +125,6 @@ var cat = function(uri, cb) {
     console.log(fileSystem[uri].data instanceof Array);
     var size = fileSystem[uri].size;
     var name = path.basename(uri);
-    // FIXME: Adapt BufferStream to handle arrays of buffer.
-    var BufferStream = require('./buffer-stream');
     cb({stream: new BufferStream(null,fileSystem[uri].data), size: size, name: name});
 };
 
