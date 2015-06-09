@@ -103,7 +103,7 @@ FoldersFs.prototype.stat = function(uri , callback) {
 	}
 
 	if(stats) {
-		stats.mtime = stats.modificationTime;
+		stats.mtime = parseInt(stats.modificationTime);
 		stats.mode = folder_attr.mode;
 		stats.isDirectory = function() {
 			if (stats.type == 'text/plain') //FIXME: why this hardcoded!
