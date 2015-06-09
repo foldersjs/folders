@@ -74,20 +74,19 @@ FoldersFs.prototype.stat = function(uri , callback) {
 //{ mode, isDirectory(), size, mtime }
 
 	uri = path.normalize(uri);
+	
 	var dirname = path.dirname(uri)
 	var basename = path.basename(uri)
-
-// NOTES: Upstream could apparently use stat() style method to always return one result.
-// NOTES: We could cache these results as node FS pattern is to run readdir then stat on each result.
-
-
-  self.provider.ls(dirname, function(res,err) {
-
-	if(uri == ".") {
+	
+	if (uri == '.'  || uri == '/') { //allow browsing root and current dir
 		callback(null, new Stats(folder_attr));
 		return;
 	}
 
+// NOTES: Upstream could apparently use stat() style method to always return one result.
+// NOTES: We could cache these results as node FS pattern is to run readdir then stat on each result.
+
+  self.provider.ls(dirname, function(res,err) {
 
 	if (!res) {
 		console.log("error in fs.js stat() ",err);
