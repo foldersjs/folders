@@ -68,27 +68,46 @@ var sign = function(input, key) {
 var HandshakeService = function() {
 	this.nodes = {};
 	this.session = {};
+	
+	//FIXME: we should fix this so it wont' change
+	this.bob = createKeypair();
 };
 
 HandshakeService.prototype.node = function(nodeId, input, nonce, token) {
+	console.log("input.length: ", input.length);
 	if(input.length == 32) {
+		var verifier =  stringify(hash(input), 32);
+		if (verifier!=nodeId) return false;
+		//console.log('here', nodeId, hash(input));	
 	}
 	else if(input.length == 104) {
 		nonce = input.subarray(32, 32+24);
 		token = input.subarray(56, 104);
 		input = input.subarray(0,32);
+		
+		var verifier =  stringify(hash(input), 32);
+		if (verifier!=nodeId) return false;
+		
+		//Unbox the token to get the session public key
+		console.log('unbox session:...');
+		var sessionKey = nacl.box.open(token, nonce, input, this.bob.secretKey);
+		console.log('session pk: ', stringify(sessionKey));
+		//remember the session public key
+		this.session[nodeId] = sessionKey;
 	}
 	else {
 		return false;
 	}
-	if(hash(input) != nodeId) return false;
+	//if(hash(input) != nodeId) return false;
 	if(!(nodeId in this.nodes)) {
 		this.nodes[nodeId] = input;
 	}
-
+	
+	/*
 	var restId = hash(handshake);
 	this.session[restId] = token;
 	this.session[nodeId] = restId;
+	*/
 	return true;
 }
 
@@ -109,8 +128,8 @@ function createHandshake(alice, bob) {
  
 	// Box the session token.
 	var session = nacl.sign.keyPair.fromSeed(alice.secretKey);
+	console.log('session public key: ', stringify(session.publicKey));
 	var token = nacl.box(session.publicKey, nonce, bob.publicKey, alice.secretKey);
-
 	var handshake = join([alice.publicKey, nonce, token]);
 	return handshake;
 
@@ -126,5 +145,7 @@ module.exports = {
 	createKeypair: createKeypair,
 	pair: pair,
 	endpoint: endpoint,
-	hash: hash
+	createHandshake: createHandshake,
+	hash: hash,
+	HandshakeService: HandshakeService,
 }
