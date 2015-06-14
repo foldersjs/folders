@@ -9,7 +9,9 @@
 
 // todo: close down routes for garbage collection
 
+var request = require('request');
 var BufferStream = require('./stream-buffer');
+var Handshake = require('./handshake');
 var route = {};
 var registry = {};
 var providers = {};
@@ -310,3 +312,51 @@ Fio.simple = function(cb, baseUri) {
 	return simple(baseUri, cb, cb);
 };
 // Perhaps a promise interface would be nice as well.
+
+/*
+ * New API to create share 
+ */
+Fio.prototype.createNode = function() {
+	var key = Handshake.createKeypair();
+	var endpoint = Handshake.endpoint(key);
+	console.log('publicKey: ', key.publicKey);
+	var publicKey = Handshake.stringify(key.publicKey);
+	console.log('publicKey length: ', key.publicKey.length, publicKey.length);
+	
+	var options = {
+		uri: this.baseUri + '/' + endpoint,
+		port: 8090,
+		method: 'PUT',
+		json: {key: publicKey}
+	};
+	
+	
+	console.log('createNode: ', options);
+	
+	request(options).pipe(process.stdout)
+	
+	//FIXME: abstract to route later
+	/*
+	var req = http.request(options, function(res) {
+		//res.setEncoding('utf8');
+		res.on('data', function (chunk) {
+		  console.log('BODY: ' + chunk);
+		});
+	  });
+
+	req.on('error', function(e) {
+	  console.log('problem with request: ' + e.message);
+	});
+	
+	req.end();
+	*/
+}
+
+/*
+ * New API to create handshake
+ */
+Fio.handshake = function() {
+	
+	//FIXME: abstract to route later
+}
+

@@ -44,14 +44,28 @@ var join = function(arr) {
 	}
 	return out;
 };
+
+///Convert to Hex string
 var stringify = function(input, stopAt) {
 	stopAt = stopAt || input.length;
 	var str = [];
 	for(var i = 0; i < stopAt; i++) {
-		str.push((input[i]).toString(16));
+		var ss = input[i].toString('16');
+		if (ss.length < 2) ss = '0' + ss;
+		str.push(ss);
 	}
 	return str.join('');
 };
+
+///Reverse of stringify
+var decodeHexString = function(str) {
+	var arr = [];
+	for (var i = 0; i < str.length; i+=2) {
+		arr.push(parseInt(str.substring(i, i+2), 16));
+	}
+	return new Uint8Array(arr);
+	//return new Uint8Array(atob(b64encoded).split("").map(function(c) { return c.charCodeAt(0); }));
+}
 var hash = function(input) {
 	return nacl.hash(nacl.hash(input));
 };
@@ -77,6 +91,8 @@ HandshakeService.prototype.node = function(nodeId, input, nonce, token) {
 	console.log("input.length: ", input.length);
 	if(input.length == 32) {
 		var verifier =  stringify(hash(input), 32);
+		console.log('verifier: ', verifier);
+		
 		if (verifier!=nodeId) return false;
 		//console.log('here', nodeId, hash(input));	
 	}
@@ -147,5 +163,7 @@ module.exports = {
 	endpoint: endpoint,
 	createHandshake: createHandshake,
 	hash: hash,
+	stringify: stringify,
+	decodeHexString: decodeHexString,
 	HandshakeService: HandshakeService,
 }

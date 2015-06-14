@@ -1,5 +1,6 @@
 var Handshake = require('../src/handshake');
 var assert = require('assert');
+var Fio = require('../src/api');
 
 var HandshakeService = Handshake.HandshakeService;
 
@@ -31,5 +32,12 @@ var testExtended = function() {
     assert(res);
 }
 
+var testNode = function() {
+    var fio  = new Fio('http://localhost:8090', false, 0);
+    fio.createNode();
+}
+
+testNode();
+
 //testSimple();
-testExtended();
+//testExtended();
