@@ -9,6 +9,8 @@ Additional providers are available and can be installed via "npm install folders
 For example: "npm install folders-ftp" will install an FTP module. The module comes with an FTP client and server,
 enabling Folders to use Folders on a remote system, and to provide access to folders over the FTP protocol to clients.
 
+You need install gulp tasker module by command "npm install --global gulp". Then you can go to src and run "gulp test". That will run the test directory test cases.  
+
 The core project is available under the Apache 2.0 or MIT licenses. Modules and their dependencies may have different license requirements.
 
 Folders Provider API
