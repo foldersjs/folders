@@ -207,6 +207,9 @@ Fio.prototype.asPostUri = function(streamId) {
 	return uri;
 };
 
+
+
+
 Fio.prototype.post = function(streamId, data, headerMap, tokenId) {
 	var uri = this.asPostUri(streamId);
 
@@ -327,7 +330,7 @@ Fio.prototype.createNode = function() {
 		uri: this.baseUri + '/' + endpoint,
 		port: 8090,
 		method: 'PUT',
-		json: {key: publicKey}
+		json: publicKey
 	};
 	
 	
@@ -354,9 +357,71 @@ Fio.prototype.createNode = function() {
 
 /*
  * New API to create handshake
+ * @param serverKey: Public key of the service
  */
-Fio.handshake = function() {
-	
-	//FIXME: abstract to route later
+Fio.prototype.handshake = function(serviceKey, cb) {
+	alice = Handshake.createKeypair(); //keypair of client
+    this.alice = alice; //generete session
+    
+    var bob = {publicKey: serviceKey};
+    this.bob = bob;
+    
+    //bob contains server public key!
+	var res = Handshake.createHandshake(alice, bob);
+    this.session = res.session;
+    this.handshake = res.handshake;
+    
+    //console.log('handshake length: ', handshake.length);
+    
+    endpoint = Handshake.endpoint(alice);
+    this.endpoint = endpoint;
+    
+    //Send the PUT request to the end-point
+    var options = {
+		uri: this.baseUri + '/' + this.endpoint,
+		port: 8090,
+		method: 'PUT',
+        json: this.handshake
+		//json: Handshake.stringify(handshake)
+	};
+    
+    request(options)
+    .on('response', function(response) {
+        console.log('handshake OK');
+        cb();
+    })
+    .on('error', function(err) {
+        console.log('handshake Error!');
+    })
+    .pipe(process.stdout); //just display to output first!
+}
+
+/* Post a encrypted message to the current endpoint after successful handshake */
+/* @param: the extra request path to be signed */
+Fio.prototype.postSigned = function(path, data) {
+   var uri = this.baseUri + '/' + this.endpoint + '/' + path;
+   if (typeof(data) == 'undefined') data = {};
+   //data['path'] = path;
+   
+   data['sign'] = Handshake.signRequest(path, this.session);
+   //console.log('signature: ', data);
+   
+   //Note: mach (server-side) does not support multipart/form-data (see https://github.com/mjackson/mach/blob/master/modules/Message.js)
+   //so, we test using x-www-form-urlencoded for now
+   request({
+        uri: uri,
+        port: 8090,
+		method: 'POST',
+        form: data
+        /*
+        form: {
+                //data: Handshake.encryptMessage(data, this.alice, this.bob)
+                data
+        }
+        */
+		//json: data
+   })
+   .pipe(process.stdout);
+   
 }
 

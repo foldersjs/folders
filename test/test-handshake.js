@@ -32,12 +32,29 @@ var testExtended = function() {
     assert(res);
 }
 
-var testNode = function() {
+var testCreateNode = function() {
     var fio  = new Fio('http://localhost:8090', false, 0);
     fio.createNode();
 }
 
-testNode();
+var testHandshake = function() {
+    //var bob = Handshake.createKeypair(); //to fake server's public key!
+    var bob = {'publicKey': Handshake.decodeHexString('2af37d7af58b07a65ee6fca7cc1432fa15d0e9c06bce81cd86f4fecee1114b55')};
+    var fio  = new Fio('http://localhost:8090', false, 0);
+    fio.handshake(bob.publicKey, function () {
+        //callback if handshake successful!
+        //Now, sign and post something to server!
+        fio.postSigned('create');
+    });
+    
+    //test another
+    
+}
+
+
+//testCreateNode();
+
+testHandshake();
 
 //testSimple();
 //testExtended();
