@@ -1,41 +1,21 @@
 /*
  *
+ * Folders.io P2P server example.
  *
- * Event API to serve files and folders from various providers.
+ * Uses the folders API to serve files and folders from various providers.
  *
  */
- 
-var onList = function(o,data){
-	o.provider.ls(data,cb)
-} 
-
-var onBlob = function(o,data){
-	o.provider.cat(data,cb)
-	
-}
-
-/*
- * callback to be passed with current
- * implementation of folders-stub
- */
- 
-var cb = function(result,fio){
-	console.log(result)
-	fio.post(result.streamId, JSON.stringify(result.data),
-      result.headers, result.shareId);
-} 
-
  
 module.exports = function(o ,channel){
 	var self = o;
 	channel.subscribe("DirectoryListRequest", function(data, envelope) {
 		console.log("ready to list it", data);
-		onList(self,data);
+		self.provider.onList(data);
 	});
 	
 	channel.subscribe("FileRequest", function(data, envelope) {
 		console.log("ready to blob it", data);
-		onBlob(self,data);
+		self.provider.onBlob(data);
 	});
 	
 	channel.subscribe("SetFilesRequest", function(data, envelope) {
@@ -51,7 +31,6 @@ module.exports = function(o ,channel){
 
 	
     });
-	
 	
 	return;
 }
