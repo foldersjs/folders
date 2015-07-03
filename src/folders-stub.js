@@ -41,17 +41,17 @@ StubFs.prototype.stubData = {
 };
 
 StubFs.prototype.ls = function(path, cb) {
-	cb(this.stubData.lsData);
+	cb(null,this.stubData.lsData);
 };
 
 StubFs.prototype.cat = function(path, cb) {
-  	cb({stream:this.stubData.asData(),size:960,name:'stub-file.txt',meta: { mime:"text/plain", date: (0+new Date()) }});
+  	cb(null,{stream:this.stubData.asData(),size:960,name:'stub-file.txt',meta: { mime:"text/plain", date: (0+new Date()) }});
 //  	cb({streamId: data.data.streamId, data: stubData.asData,
 //		headers: stubData.asMime, shareId: data.shareId});
 };
   
 StubFs.prototype.write = function(uri, data, cb){
-  	cb('write data success');
+  	cb(null,'write data success');
 //  	cb({streamId: data.data.streamId, data:stubData.writeData,
 //  		headers:stubData.writeMime, shareId:data.shareId});
 };

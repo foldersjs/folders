@@ -34,10 +34,10 @@ LocalFio.prototype.cat = function(path, cb) {
   cat(uri, function(result, err) {
   	if (err){
   		console.error("error in folders-local cat,",err);
-  		return cb(null, err);
+  		return cb(err, null);
   	}
 
-  	cb(result);
+  	cb(null,result);
   	
 //    var headers = {
 //      "Content-Length": result.size,
@@ -57,9 +57,9 @@ LocalFio.prototype.write = function(uri, data, cb) {
 	write(uri, data, function(result, err) {
 		if (err) {
 			console.error("error in folders-local write,",err);
-			return cb(null, err);
+			return cb(err,null);
 		}
-		cb(result);
+		cb(null,result);
 	});
 };
 
@@ -72,21 +72,21 @@ LocalFio.prototype.ls = function(uri, cb) {
   fs.stat(uri, function(err, stats) {
     if(err) {
     	console.error("error in folders-local ls,", err);
-    	return cb(null, err);
+    	return cb(err,null);
     }
     if(!stats.isDirectory()) {
       var results = self.asFolders(uri, [stats]);
-      return cb(results);
+      return cb(null,results);
     }
     fs.readdir(uri, function(err, files) {
       var results = self.asFolders(uri, files);
-      cb(results);
+      cb(null,results);
     });
   });
 };
 
 LocalFio.prototype.meta = function(uri, files, cb) {
-  if(files === null) { cb(null, "files not found"); return; }
+  if(files === null) { cb( "files not found",null); return; }
   var latch = files.length;
   // TODO: Limit the number of active stat calls.
   for(var i = 0; i < files.length; i++) {
@@ -101,7 +101,7 @@ LocalFio.prototype.meta = function(uri, files, cb) {
         files[i].size = stats.size;
       }
       if(latch == 0) {
-        cb(files);
+        cb(null,files);
       }
       // else console.log("progress " + latch);
     })})(i);
@@ -129,20 +129,20 @@ var cat = function(uri, cb) {
   fs.stat(uri, function(err, stats) {
     if(err) {
     	console.error("error in folders-local cat,",err);
-    	return cb(null, err);
+    	return cb(err,null);
     }
     if(stats.isDirectory()) {
-    	return cb(null, "refused to cat directory");
+    	return cb("refused to cat directory",null);
     }
     var size = stats.size;
     var name = path.basename(uri);
     try {
       var file = fs.createReadStream(uri).on('open', function() {
-        cb({stream: file, size: size, name: name});
+        cb(null,{stream: file, size: size, name: name});
       });
     } catch(e) {
     	console.error("error in createReadStream,",e);
-      cb(null, "unable to read uri");
+      cb("unable to read uri",null);
     }
   });
 };
@@ -154,7 +154,7 @@ var write = function(uri, data, cb) {
 		if (data instanceof Buffer){
 			file.write(data, function() {
 				file.end(function() {
-					cb("write uri success");
+					cb(null,"write uri success");
 				});
 			});
 /*
@@ -187,16 +187,16 @@ var write = function(uri, data, cb) {
 			})
 
 			var errHandle = function(e) {
-				cb(null,e.message);
+				cb(e.message,null);
 			};
 			//stream source input, use pipe
 			data.on('error',errHandle)
 				.pipe(file)
 				.on('error',errHandle)
-				.on('end', function() {cb("write uri success");});
+				.on('end', function() {cb(null,"write uri success");});
 		}
 	} catch (e) {
 		console.error("error in createWriteStream,",e);
-		cb(null, "unable to write uri");
+		cb("unable to write uri",null);
 	}
 }
