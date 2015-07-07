@@ -317,26 +317,37 @@ Fio.simple = function(cb, baseUri) {
 // Perhaps a promise interface would be nice as well.
 
 /*
- * New API to create share 
+ * New API to create share
+ * @key :contains Bob key pair 
+
  */
-Fio.prototype.createNode = function() {
-	var key = Handshake.createKeypair();
+Fio.prototype.createNode = function(key) {
+	
+	//var key =  Handshake.createKeypair();
 	var endpoint = Handshake.endpoint(key);
-	console.log('publicKey: ', key.publicKey);
+	//console.log('publicKey: ', key.publicKey);
+	// this may be send to client
 	var publicKey = Handshake.stringify(key.publicKey);
-	console.log('publicKey length: ', key.publicKey.length, publicKey.length);
+	
+	console.log(">> Server --MY-- Public key :")
+	console.log(publicKey);
+	
+	//console.log('publicKey length: ', key.publicKey.length, publicKey.length);
 	
 	var options = {
 		uri: this.baseUri + '/' + endpoint,
 		port: 8090,
 		method: 'PUT',
-		json: publicKey
+		body:publicKey
+		//json: publicKey
 	};
 	
 	
-	console.log('createNode: ', options);
+	//console.log('createNode: ', options);
 	
-	request(options).pipe(process.stdout)
+	return options;
+	
+	//request(options).pipe(process.stdout)
 	
 	//FIXME: abstract to route later
 	/*
@@ -357,7 +368,7 @@ Fio.prototype.createNode = function() {
 
 /*
  * New API to create handshake
- * @param serverKey: Public key of the service
+ * @param serviceKey: Public key of the service
  */
 Fio.prototype.handshake = function(serviceKey, cb) {
 	alice = Handshake.createKeypair(); //keypair of client
@@ -371,6 +382,9 @@ Fio.prototype.handshake = function(serviceKey, cb) {
     this.session = res.session;
     this.handshake = res.handshake;
     
+	console.log("Client contains --MY-- public key ");
+	
+	console.log(this.handshake);
     //console.log('handshake length: ', handshake.length);
     
     endpoint = Handshake.endpoint(alice);
@@ -381,13 +395,15 @@ Fio.prototype.handshake = function(serviceKey, cb) {
 		uri: this.baseUri + '/' + this.endpoint,
 		port: 8090,
 		method: 'PUT',
-        json: this.handshake
+        body: this.handshake
+		//json: this.handshake
 		//json: Handshake.stringify(handshake)
 	};
     
     request(options)
     .on('response', function(response) {
-        console.log('handshake OK');
+        // FIXME: A response does not necessarily mean handshake is ok 
+		console.log('handshake OK');
         cb();
     })
     .on('error', function(err) {
@@ -412,7 +428,8 @@ Fio.prototype.postSigned = function(path, data) {
         uri: uri,
         port: 8090,
 		method: 'POST',
-        form: data
+		body: JSON.stringify(data)
+        //form: data
         /*
         form: {
                 //data: Handshake.encryptMessage(data, this.alice, this.bob)

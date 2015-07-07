@@ -116,10 +116,16 @@ HandshakeService.prototype.node = function(nodeId, input) {
 		token = input.subarray(56, 104);
 		input = input.subarray(0,32);
 		
+		console.log("Server --Alice-- Public key:");
+		console.log(input);
+		
 		var verifier =  stringify(hash(input), 32);
 		if (verifier!=nodeId) {
 			console.log('verified FAILED');
 			return false;
+		}else{
+			
+			console.log('verified PASSED');
 		}
 		
 		//Unbox the token to get the session public key
@@ -200,8 +206,8 @@ function createHandshake(alice, bob) {
  
 	// Box the session token.
 	var session = nacl.sign.keyPair.fromSeed(alice.secretKey);
-	console.log('session public key: ', stringify(session.publicKey));
-	console.log('session secret key: ', session.secretKey);
+	//console.log('session public key: ', stringify(session.publicKey));
+	//console.log('session secret key: ', session.secretKey);
 	var token = nacl.box(session.publicKey, nonce, bob.publicKey, alice.secretKey);
 	var handshake = join([alice.publicKey, nonce, token]);
 	return {'session': session, 'handshake': stringify(handshake)};
