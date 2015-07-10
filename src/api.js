@@ -399,8 +399,8 @@ Fio.prototype.handshake = function(serviceKey, cb) {
 		//json: this.handshake
 		//json: Handshake.stringify(handshake)
 	};
-    
-    request(options)
+   // FIXME: Avoid dependency on request. 
+    route.request(options)
     .on('response', function(response) {
         // FIXME: A response does not necessarily mean handshake is ok 
 		console.log('handshake OK');
