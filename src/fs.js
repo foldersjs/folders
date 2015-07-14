@@ -57,15 +57,15 @@ var folder_attr = {
 };
 
 var FoldersFs = function(provider) {
-
-this.provider = provider
-
+	this.provider = provider
 };
 
 
 
 
 FoldersFs.prototype.stat = function(uri , callback) {
+	
+	console.log('stat', uri);
 
 	var self = this;
 
@@ -75,8 +75,10 @@ FoldersFs.prototype.stat = function(uri , callback) {
 
 	uri = path.normalize(uri);
 	
-	var dirname = path.dirname(uri)
-	var basename = path.basename(uri)
+	var dirname = path.dirname(uri);
+	var basename = path.basename(uri);
+	
+	console.log('basename: ', basename);
 	
 	if (uri == '.'  || uri == '/') { //allow browsing root and current dir
 		callback(null, new Stats(folder_attr));
@@ -86,32 +88,47 @@ FoldersFs.prototype.stat = function(uri , callback) {
 // NOTES: Upstream could apparently use stat() style method to always return one result.
 // NOTES: We could cache these results as node FS pattern is to run readdir then stat on each result.
 
-  self.provider.ls(dirname, function(res,err) {
-
-	if (!res) {
-		console.log("error in fs.js stat() ",err);
-		return callback(err,null);
-	}
-	  
-	var stats;
-	for (var i = 0 ; i < res.length ;++i) {
-		 if (basename == res[i].name) {
-			stats = res[i];
-			break;
-		 }
-	}
-
-	if(stats) {
-		stats.mtime = parseInt(stats.modificationTime);
-		stats.mode = folder_attr.mode;
-		stats.isDirectory = function() {
-			if (stats.type == 'text/plain') //FIXME: why this hardcoded!
-				return false;
-			return true;
-		};
-		return callback(null,stats);
-	}
-	callback("file not found", null);
+    self.provider.ls(dirname, function(err, res) {
+		if (err) {
+			console.log("error in fs.js stat() ",err);
+			return callback(err,null);
+		}
+		  
+		
+		var stats;
+		for (var i = 0 ; i < res.length ;++i) {
+			console.log('extension: ', res[i].extension);
+			 if (basename == res[i].name || (res[i].extension == "+folder" && basename + "/" == res[i].name)) {
+				stats = res[i];
+				break;
+			 }
+		}
+		
+		//console.log('stats, file found!', stats);
+	
+		if(stats) {
+			if (typeof(stats.modificationTime) == 'undefined') {
+				stats.mtime = Date.now() / 1000;	
+			}
+			else
+				stats.mtime = parseInt(stats.modificationTime);
+			stats.mode = folder_attr.mode;
+			stats.isDirectory = function() {
+				//if (stats.type == 'text/plain') //FIXME: why this hardcoded!
+				//	return false;
+				return stats.extension == "+folder";
+				//return true;
+			};
+			console.log('stats: ', stats);
+			return callback(null,stats);
+		}
+		else {
+			console.log('stats not found, DEBUG:');
+			for (var i = 0 ; i < res.length ;++i) {
+				console.log(res[i].name);
+			}
+		}
+		return callback("file not found", null);
     });
 
 };
@@ -120,9 +137,9 @@ FoldersFs.prototype.readFile = function(path,callback){
 	// Asynchronously read the entire contents of a file. 
 
 	var self = this
-	self.provider.cat(path, function(res,err) {
+	self.provider.cat(path, function(err, res) {
 
-		if (!res) {
+		if (err) {
 			console.log("error in folderFs createReadStream() ",err);
 			return callback(err);
 		}
@@ -161,10 +178,10 @@ FoldersFs.prototype.writeFile = function(filename,data,callback){
 
 // NOTES: Consider a result cache as stat is likely to be called on each result.
 FoldersFs.prototype.readdir = function(uri,callback){
+	console.log('readdir: ', uri);
 	 var self = this;
-	 self.provider.ls(uri, function(res, error) {
-
-		if (!res) {
+	 self.provider.ls(uri, function(err, res) {
+		if (err) {
 			console.log("error in fs.js readdir ",err);
 			return callback(err);
 		}
