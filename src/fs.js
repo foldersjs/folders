@@ -58,6 +58,7 @@ var folder_attr = {
 
 var FoldersFs = function(provider) {
 	this.provider = provider
+	console.log("inin foldersFs");
 };
 
 
@@ -78,7 +79,7 @@ FoldersFs.prototype.stat = function(uri , callback) {
 	var dirname = path.dirname(uri);
 	var basename = path.basename(uri);
 	
-	console.log('basename: ', basename);
+	
 	
 	if (uri == '.'  || uri == '/') { //allow browsing root and current dir
 		callback(null, new Stats(folder_attr));
@@ -110,8 +111,9 @@ FoldersFs.prototype.stat = function(uri , callback) {
 			if (typeof(stats.modificationTime) == 'undefined') {
 				stats.mtime = Date.now() / 1000;	
 			}
-			else
-				stats.mtime = parseInt(stats.modificationTime);
+			else{
+				stats.mtime = stats.modificationTime;;
+			}
 			stats.mode = folder_attr.mode;
 			stats.isDirectory = function() {
 				//if (stats.type == 'text/plain') //FIXME: why this hardcoded!
@@ -188,7 +190,7 @@ FoldersFs.prototype.readdir = function(uri,callback){
 
 		var files = [];
 
-		for (var i=0 ; i<res.length; i++) {
+		for (var i=0 ; i< res.length; i++) {
 			files[i] = res[i].name;
 		}
 		callback(null,files);
@@ -289,7 +291,7 @@ FoldersFs.prototype.open = function(uri, flags, modeOrCallback, callback) {
 // Likely a NOOP
 FoldersFs.prototype.close = function(fd, callback) {
 
- callback(null,new Error('not implemented'));	
+ callback(new Error('not implemented'),null);	
 
  };
 
@@ -298,20 +300,20 @@ FoldersFs.prototype.close = function(fd, callback) {
 
 FoldersFs.prototype.unlink = function(path, callback) {
 
-	callback(null,new Error('not implemented'));	
+	callback(new Error('not implemented'),null);	
 
 };
 
 
 FoldersFs.prototype.rmdir = function(path, callback) {
 
-	callback(null,new Error('not implemented'));	
+	callback(new Error('not implemented'),null);	
 
 };
 
 
 FoldersFs.prototype.rename = function(path, newPath, callback) {
-	callback(null,new Error('not implemented'));	
+	callback(new Error('not implemented'),null);	
 
 }
 
