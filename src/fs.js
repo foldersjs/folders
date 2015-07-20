@@ -140,9 +140,8 @@ FoldersFs.prototype.readFile = function(path,callback){
 
 	var self = this
 	self.provider.cat(path, function(err, res) {
-
 		if (err) {
-			console.log("error in folderFs createReadStream() ",err);
+			console.log("error in folderFs readFile() ",err);
 			return callback(err);
 		}
 		
@@ -207,14 +206,19 @@ FoldersFs.prototype.createReadStream = function(path){
 	//return self.provider.cat(path)
 
 	var pass =  new require('stream').PassThrough();
-
-	self.provider.cat(path, function(res,err) {
-		if (!res) {
+	
+	self.provider.cat(path, function(err, res) {
+		if (err) {
 			console.log("error in folderFs createReadStream() ",err);
-			return callback(err);
+			//return callback(err);
+			//FIXME: how to implement this correctly!?
+			pass.emit('error', err);
 		}
-		var stream = res.stream;
-		stream.pipe(pass);
+		else {
+			var stream = res.stream;
+			stream.pipe(pass);	
+		}
+		
 	}); 
 	
 	return pass
@@ -223,20 +227,28 @@ FoldersFs.prototype.createReadStream = function(path){
 
 FoldersFs.prototype.createWriteStream = function(path,options){
 	
+	console.log('folderfs createWriteStream', path);
 	var self = this
 	
 	var pass =  new require('stream').PassThrough()
 	
-    self.provider.write(path,pass,function(res){
-		
-		console.log(res)
-		
-		
+	pass.on("end", function() { console.log ('stream end'); } );
+	pass.on("close", function() { console.log ('stream close'); } );
+	
+	pass.destroySoon = function() {
+		//console.log('destroySoon called');
+	}
+	
+	var fs = require('fs');
+	//var tmp = fs.createReadStream('/Users/hai/Desktop/Music Sheets/if_youre_happy_leadsheet.pdf');
+    self.provider.write(path,pass,function(err, res){
+		if (err) {
+			console.log("error in folderFs createWritetream() ",err);
+		}
 	})
 	
+	//return fs.createWriteStream('/Users/hai/Desktop/Music Sheets/out.pdf', options);
 	return pass 
-
-	
 }
 
 
