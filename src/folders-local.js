@@ -181,11 +181,11 @@ var write = function(uri, data, cb) {
 				data.emit('close');
 		
 			});
-			
+			/*
 			file.on('open',function(fd) {
 				data.emit('open',fd);
 			})
-
+			*/
 			var errHandle = function(e) {
 				cb(e.message,null);
 			};
