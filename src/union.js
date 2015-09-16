@@ -10,7 +10,7 @@ var UnionFio = function (fio, mounts, opts, prefix) {
     this.fuse = {};
     //this.mounts = mounts;
     //this.fuse = this.setup(opts
-	this.setup(mounts||[]);
+	this.setup(opts,mounts||[]);
 
 };
 
@@ -77,7 +77,7 @@ UnionFio.prototype.asView = function (path, viewfs) {
     var subpos = path.indexOf("/", 1);
     var root = subpos > -1 ? path.substr(0, subpos) : path;
     var name = root.substr(1);
-    console.log("asView", name, path);
+   // console.log("asView", name, path);
     if (!(name in viewfs)) {
         return false;
     }
