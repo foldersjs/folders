@@ -163,12 +163,12 @@ UnionFio.prototype.cp = function (source, destination, cb) {
 
 };
 
-UnionFio.prototype.umount = function (provider) {
+UnionFio.prototype.umount = function (mountPoint) {
 
     var self = this;
 
-    if (provider in self.fuse) {
-        delete self.fuse[provider];
+    if (mountPoint in self.fuse) {
+        delete self.fuse[mountPoint];
     } else {
 
         console.log("union umount: Error! nothing to umount");
