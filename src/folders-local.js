@@ -6,9 +6,23 @@
 var fs = require('fs');
 var path = require('path');
 
-var LocalFio = function (prefix) {
+var LocalFio = function (prefix, options) {
+
+    this.options = options || {};
     this.prefix = prefix || "/http_window.io_0:local/";
 };
+
+LocalFio.dataVolume = function () {
+
+    return {
+        RXOK: LocalFio.RXOK,
+        TXOK: LocalFio.TXOK
+    };
+};
+
+LocalFio.TXOK = 0;
+LocalFio.RXOK = 0;
+
 module.exports = LocalFio;
 
 LocalFio.prototype.normalizePath = function (uri) {
@@ -35,6 +49,7 @@ LocalFio.prototype.cat = function (path, cb) {
             console.error("error in folders-local cat,", err);
             return cb(err, null);
         }
+
 
         cb(null, result);
 
@@ -124,10 +139,16 @@ LocalFio.prototype.asFolders = function (dir, files) {
         o.size = 0;
         o.extension = "txt";
         o.type = "text/plain";
+
         o.modificationTime = +new Date();
         out.push(o);
     }
     return out;
+};
+
+LocalFio.prototype.dump = function () {
+
+    return this.options;
 };
 
 var cat = function (uri, cb) {
@@ -143,12 +164,15 @@ var cat = function (uri, cb) {
         var name = path.basename(uri);
         try {
             var file = fs.createReadStream(uri).on('open', function () {
+
                 cb(null, {
                     stream: file,
                     size: size,
                     name: name
                 });
             });
+
+
         } catch (e) {
             console.error("error in createReadStream,", e);
             cb("unable to read uri", null);
@@ -210,9 +234,16 @@ var write = function (uri, data, cb) {
             });
 
 
+
             //stream source input, use pipe
 
             data.pipe(file);
+
+            data.on('data', function (d) {
+
+                LocalFio.RXOK += d.length;
+
+            });
 
         }
     } catch (e) {

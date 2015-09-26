@@ -14,7 +14,7 @@ var BufferStream = require('./stream-buffer');
 var Handshake = require('./handshake');
 var route = {};
 var registry = {};
-var providers = {};
+//var providers={};
 
 // FIXME: Route seems to be the remaining optional argument is likely the only argument needed.
 var Fio = function(baseUri, asDebug, routeImpl) {
@@ -39,6 +39,8 @@ var Fio = function(baseUri, asDebug, routeImpl) {
 		}
 };
 
+Fio.providers = {};
+
 Fio.prototype.fs =
 Fio.fs = function() {
 	return require('./fs');
@@ -62,17 +64,17 @@ Fio.provider = function(module, opts) {
 		if(!(module in providers)) {
 			try {
 				if (  ['stub','local','memory'].indexOf(module) > -1){
-					providers[module] = require("./folders-" + module);
+					Fio.providers[module] = require("./folders-" + module);
 				}else	{ //external import, make sure add dependence, npm install folders-module
-					providers[module] = require("folders-" + module);
+					Fio.providers[module] = require("folders-" + module);
 				}
 			} catch(e) { 
 				//if exception, we will try import using the module name directly
 				console.error(e);
-				providers[module] = require(module);
+				Fio.providers[module] = require(module);
 			}
 		}
-		var Provider = providers[module];
+		var Provider = Fio.providers[module];
 		return new Provider(prefix, opts);
 	};
 	var fn = {create: create};
