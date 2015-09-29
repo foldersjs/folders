@@ -61,7 +61,7 @@ Fio.router = function() {
 Fio.prototype.provider =
 Fio.provider = function(module, opts) {
 	var create = function(prefix) {
-		if(!(module in providers)) {
+		if(!(module in Fio.providers)) {
 			try {
 				if (  ['stub','local','memory'].indexOf(module) > -1){
 					Fio.providers[module] = require("./folders-" + module);

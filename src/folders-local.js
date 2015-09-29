@@ -164,7 +164,7 @@ var cat = function (uri, cb) {
         var name = path.basename(uri);
         try {
             var file = fs.createReadStream(uri).on('open', function () {
-
+				LocalFio.TXOK += size;
                 cb(null, {
                     stream: file,
                     size: size,
