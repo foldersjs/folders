@@ -164,7 +164,6 @@ var cat = function (uri, cb) {
         var name = path.basename(uri);
         try {
             var file = fs.createReadStream(uri).on('open', function () {
-				LocalFio.TXOK += size;
                 cb(null, {
                     stream: file,
                     size: size,
@@ -241,7 +240,8 @@ var write = function (uri, data, cb) {
 
             data.on('data', function (d) {
 
-                LocalFio.RXOK += d.length;
+                 LocalFio.RXOK =  LocalFio.TXOK += d.length;
+				
 
             });
 
