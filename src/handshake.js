@@ -41,11 +41,24 @@ var join = function(arr) {
 	var out = new Uint8Array(pos);
 	var pos = 0;
 	for(var i = 0; i < len; i++) {
-		out.set(arr[i], pos);
+		var tmp = arr[i];
+		if (typeof(arr[i]) == 'string'){
+			tmp = toArray(arr[i]);
+		}
+		out.set(tmp, pos);
 		pos += arr[i].length;
 	}
 	return out;
 };
+
+///Convert a string to Uint8Array buffer
+var toArray = function( str) {
+	var out = new Uint8Array(str.length);
+	for (var i = 0; i < str.length; i++) {
+		out[i]=str.charCodeAt(i);
+	}
+	return out;
+}
 
 ///Convert to Hex string
 var stringify = function(input, stopAt) {
@@ -89,9 +102,38 @@ var HandshakeService = function() {
 	this.session = {};
 	
 	//This is the Service's key-pair
+	//FIXME: this should be generated, not hardcoded!
 	this.bob = {'publicKey': decodeHexString('2af37d7af58b07a65ee6fca7cc1432fa15d0e9c06bce81cd86f4fecee1114b55'),
 				'secretKey': decodeHexString('5cc4597497c702d665959146689ad832a0b43c79336751c1473e88df104707d4')};
 	
+	
+	
+	console.log('secretKey length: ',  this.bob.secretKey.length);
+	
+	//some quick testing for session key
+	
+	//var session = nacl.sign.keyPair();
+	//console.log('session private key: ', stringify(session.secretKey));
+	//console.log('session public key: ', stringify(session.publicKey));
+	
+	var session = {"secretKey":decodeHexString("9946846a6a0c594e915a550775f6fd751592f97f0fa0d220935d4efa8c517ed8b8e61f3cc895dfa786d9c57f6bfc064a5b0fbd657bb00b94e2240213ca09a2da"),
+					"publicKey":decodeHexString("b8e61f3cc895dfa786d9c57f6bfc064a5b0fbd657bb00b94e2240213ca09a2da")};
+	
+	//console.log('box secret key: ', nacl.box.keyPair().secretKey.length);
+	//console.log('sign secret key: ', nacl.sign.keyPair().secretKey.length);
+	var message = toArray('/dir/testshareid');
+	var signature = nacl.sign.detached(message, session.secretKey);
+	console.log('test signature: ', stringify(signature));
+	
+	//test if we can decrypt it!
+	var res = nacl.sign.detached.verify(message, signature, session.publicKey);
+	console.log('verify: ', res);
+	
+	
+	this.session[''] = [session.publicKey];
+	
+	
+	//this.userPublicKey = 'test';
 	/*
 	//Generate initial keypair for the service
 	this.bob = createKeypair();
@@ -100,6 +142,10 @@ var HandshakeService = function() {
 	console.log('bob secret key: ', stringify(this.bob.secretKey));
 	*/
 };
+
+HandshakeService.prototype.setUserPublicKey = function(key) {
+	this.userPublicKey = key;
+}
 
 HandshakeService.prototype.node = function(nodeId, input) {
 	console.log("nodeId & input.length: ", nodeId, input.length);
@@ -116,17 +162,18 @@ HandshakeService.prototype.node = function(nodeId, input) {
 		token = input.subarray(56, 104);
 		input = input.subarray(0,32);
 		
-		console.log("Server --Alice-- Public key:");
-		console.log(input);
+		//console.log("Server --Alice-- Public key:");
+		//console.log(input);
 		
+		/*
 		var verifier =  stringify(hash(input), 32);
 		if (verifier!=nodeId) {
 			console.log('verified FAILED');
 			return false;
 		}else{
-			
 			console.log('verified PASSED');
 		}
+		*/
 		
 		//Unbox the token to get the session public key
 		console.log('unbox session:...');
@@ -135,7 +182,9 @@ HandshakeService.prototype.node = function(nodeId, input) {
 			console.log('invalid service key');
 			return false;
 		}
-		console.log('sessionKey: ', sessionKey);
+		console.log('session public Key length: ', sessionKey.length);
+		
+		//unbox successfully!
 		
 		//console.log('session pk: ', sessionKey, stringify(sessionKey));
 		
@@ -148,6 +197,7 @@ HandshakeService.prototype.node = function(nodeId, input) {
 		console.log('session count: ', this.session[nodeId].length);
 	}
 	else {
+		console.log('unknown token!');
 		return false;
 	}
 	//if(hash(input) != nodeId) return false;
@@ -166,8 +216,13 @@ HandshakeService.prototype.node = function(nodeId, input) {
 /* Verify if a request belongs to a valid session */
 HandshakeService.prototype.verifyRequest = function(nodeId, path, signature) {
 	console.log('verifyRequest: ', nodeId, path, signature);
-	if (typeof(this.session[nodeId]) == 'undefined')
+	if (typeof(this.session[nodeId]) == 'undefined') {
+		console.log('Error! Node session not found!');
 		return false;
+	}
+	else {
+		console.log("existing session found: ", this.session[nodeId].length);
+	}
 	//console.log('session count: ', this.session[nodeId].length);
 	//convert to Uint8 array
 	var arrPath = join([path]);
@@ -176,7 +231,7 @@ HandshakeService.prototype.verifyRequest = function(nodeId, path, signature) {
 	for (var i = 0; i < this.session[nodeId].length; i++) {
 		var k = this.session[nodeId][i];
 		//var sessionKey = this.session[nodeId][k];
-		console.log("session: ", typeof(k));
+		console.log("session: ", stringify(k));
 		
 		var res = nacl.sign.detached.verify(arrPath, arrSign, k);
 		//var res = false;
@@ -235,6 +290,7 @@ function signRequest(path, session) {
 
 
 module.exports = {
+	join: join,
 	createKeypair: createKeypair,
 	pair: pair,
 	endpoint: endpoint,
