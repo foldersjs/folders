@@ -16,6 +16,8 @@
 */
 
 var nacl = require('./lib/nacl-fast.min');
+var qs = require('querystring');
+var url = require('url');
 
 var pair = function(prefix, fn) {
 	if(!fn) fn = nacl.box.keyPair;
@@ -143,9 +145,10 @@ var HandshakeService = function() {
 	*/
 };
 
+/*
 HandshakeService.prototype.setUserPublicKey = function(key) {
 	this.userPublicKey = key;
-}
+}*/
 
 HandshakeService.prototype.node = function(nodeId, input) {
 	console.log("nodeId & input.length: ", nodeId, input.length);
@@ -214,6 +217,7 @@ HandshakeService.prototype.node = function(nodeId, input) {
 }
 
 /* Verify if a request belongs to a valid session */
+/*
 HandshakeService.prototype.verifyRequest = function(nodeId, path, signature) {
 	console.log('verifyRequest: ', nodeId, path, signature);
 	if (typeof(this.session[nodeId]) == 'undefined') {
@@ -243,7 +247,129 @@ HandshakeService.prototype.verifyRequest = function(nodeId, path, signature) {
 	}
 	return false;
 }
+*/
 
+function oauthBaseStringURI(req) {
+	// Argh!
+	var scheme = req.connection.verifyPeer != undefined ? 'https' : 'http';
+	var hostname = req.header('host').split(':')[0].toLowerCase();
+	var port = parseInt(req.header('host').split(':')[1], 10);
+	
+	if ((port != NaN)
+	    && (scheme != 'http' || port != 80)
+	    && (scheme != 'https' || port != 443))
+		hostname = hostname + ':' + port;
+
+	return scheme + "://" + hostname + url.parse(req.originalUrl).pathname;
+}
+
+function oauthRequestParameterString(req) {
+	var params = [];
+	
+	// Add encoded counterparts of query string parameters
+	for (var key in req.query)
+		//if (key != 'oauth_signature')
+		if (key != '_') //exclude the AJAX timestamp
+			params.push([ qs.escape(key), qs.escape(req.query[key]) ]);
+			
+	// Add encoded counterparts of OAuth header parameters
+	/*
+	for (var key in req.oauthHeaderParams)
+		if (key.match(/^oauth_/)
+		    && key != 'oauth_signature')
+		    params.push([ qs.escape(key), qs.escape(req.oauthHeaderParams[key]) ]);
+	*/
+		    
+	// Add encoded counterparts of body parameters
+	if (req.is('application/x-www-form-urlencoded'))
+		for (var key in req.body)
+			//if (key != 'oauth_signature')
+			if (key!='_')  //exclude AJAX timestamp
+				//code
+				params.push([ qs.escape(key), qs.escape(req.body[key]) ]);
+
+	params.sort();
+
+	var paramString = "";
+	for (var i = 0; i < params.length; i++)
+		paramString += (paramString ? '&' : '') + params[i][0] + '=' + params[i][1];
+	
+	return paramString;
+}
+
+HandshakeService.prototype.verifySignature = function(req, signature) {
+	var baseStringURI = oauthBaseStringURI(req);
+	var requestParameterString = oauthRequestParameterString(req);
+	var baseString = req.method.toUpperCase() + "&" + qs.escape(baseStringURI);
+	if  (requestParameterString!='') {
+		baseString+="&" + qs.escape(requestParameterString);	
+	}
+	console.log('baseString: ', baseString);
+	
+	//FIXME: correct this!
+	var nodeId = '';
+	
+	var arrPath = join([baseString]);
+	var arrSign = decodeHexString(signature);
+	//for (k in this.session[nodeId]) {
+	for (var i = 0; i < this.session[nodeId].length; i++) {
+		var k = this.session[nodeId][i];
+		//var sessionKey = this.session[nodeId][k];
+		console.log("session: ", stringify(k));
+		
+		var res = nacl.sign.detached.verify(arrPath, arrSign, k);
+		//var res = false;
+		if (res) {
+			console.log('request OK');
+			return true; //find the session that match!
+		}
+		//FIXME: verify if res is same as path!
+	}
+	//None of the session key can verify the message!
+	return false; 
+}
+
+/* Verify if a request belongs to a valid session */
+/* Return false if it is not! */
+HandshakeService.prototype.verifyRequest = function(req) {
+	//First, extract Authorization Header from the request
+	//Authorization header should have format 'NaCl signature="..."'
+	  var auth = req.headers['authorization'];
+	  console.log("Authorization Header is: ", auth);
+	  if (!auth) {
+		return false;
+	  }
+	  
+	var naclParams = {};
+	  // Parse the Authorization header into it if given
+	
+	if (auth && auth.match(/^NaCl\b/i)) {
+		var params = auth.match(/[^=\s]+="[^"]*"(?:,\s*)?/g);
+		for (var i = 0; i < params.length; i++) {
+			var match = params[i].match(/([^=\s]+)="([^"]*)"/);
+			var key = qs.unescape(match[1]);
+			var value = qs.unescape(match[2]);
+			//req.oauthParams[key] = req.oauthHeaderParams[key] = value;
+			naclParams[key] = value;
+		}
+	}
+	else {
+		console.log('not NaCl auth scheme!');
+	}
+	
+	//console.log('signature: ', naclParams['signature']);
+	if (!this.verifySignature(req, naclParams['signature'])) {
+		console.log("verifySignature failed");
+		return false;
+	}
+	else {
+		console.log('signature OK');
+		return true;
+	}
+	
+	
+	//console.log(naclParams);
+}
 
 function createKeypair() {
 	return pair(0xfc);
