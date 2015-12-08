@@ -263,7 +263,12 @@ function oauthBaseStringURI(req) {
 	return scheme + "://" + hostname + url.parse(req.originalUrl).pathname;
 }
 
+
+///Get the string that comprises all request parameters
+///@return: the return value is already escaped, so do not double-escape it!
 function oauthRequestParameterString(req) {
+	//console.log('oauthRequestParamString body: ', req.body);
+	//console.log('query: ', req.query);
 	var params = [];
 	
 	// Add encoded counterparts of query string parameters
@@ -281,28 +286,34 @@ function oauthRequestParameterString(req) {
 	*/
 		    
 	// Add encoded counterparts of body parameters
-	if (req.is('application/x-www-form-urlencoded'))
+	if (req.is('application/x-www-form-urlencoded')) {
+		//console.log('application/x-www-form-urlencoded');
 		for (var key in req.body)
 			//if (key != 'oauth_signature')
 			if (key!='_')  //exclude AJAX timestamp
 				//code
 				params.push([ qs.escape(key), qs.escape(req.body[key]) ]);
+	}
 
 	params.sort();
 
 	var paramString = "";
 	for (var i = 0; i < params.length; i++)
 		paramString += (paramString ? '&' : '') + params[i][0] + '=' + params[i][1];
+		//paramString += (paramString ? qs.escape('&') : '') + params[i][0] + qs.escape('=') + params[i][1];
 	
 	return paramString;
 }
 
 HandshakeService.prototype.verifySignature = function(req, signature) {
 	var baseStringURI = oauthBaseStringURI(req);
+	baseStringURI = qs.unescape(baseStringURI); //avoid double escaping of %20
+	console.log('baseStringURI: ', baseStringURI);
 	var requestParameterString = oauthRequestParameterString(req);
 	var baseString = req.method.toUpperCase() + "&" + qs.escape(baseStringURI);
 	if  (requestParameterString!='') {
-		baseString+="&" + qs.escape(requestParameterString);	
+		//baseString+="&" + qs.escape(requestParameterString);
+		baseString+="&" + requestParameterString;
 	}
 	console.log('baseString: ', baseString);
 	
