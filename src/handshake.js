@@ -338,8 +338,7 @@ HandshakeService.prototype.verifySignature = function(req, signature) {
 	var requestParameterString = oauthRequestParameterString(req);
 	var baseString = req.method.toUpperCase() + "&" + qs.escape(baseStringURI);
 	if  (requestParameterString!='') {
-		//baseString+="&" + qs.escape(requestParameterString);
-		baseString+="&" + requestParameterString;
+		baseString+="&" + qs.escape(requestParameterString);
 	}
 	console.log('baseString: ', baseString);
 	console.log('signature: ', signature);
