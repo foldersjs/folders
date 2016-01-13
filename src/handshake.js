@@ -34,6 +34,8 @@ var pair = function(prefix, fn) {
 	return null;
 };
 
+
+
 /* Join an array of string/buffer into a Uint8Array buffer */
 var join = function(arr) {
 	var pos = 0; var len = arr.length;
@@ -118,21 +120,24 @@ var HandshakeService = function() {
 	//console.log('session private key: ', stringify(session.secretKey));
 	//console.log('session public key: ', stringify(session.publicKey));
 	
-	var session = {"secretKey":decodeHexString("9946846a6a0c594e915a550775f6fd751592f97f0fa0d220935d4efa8c517ed8b8e61f3cc895dfa786d9c57f6bfc064a5b0fbd657bb00b94e2240213ca09a2da"),
-					"publicKey":decodeHexString("b8e61f3cc895dfa786d9c57f6bfc064a5b0fbd657bb00b94e2240213ca09a2da")};
+	//FIXME: what's this!? hardcoded!?
+	//var session = {"secretKey":decodeHexString("9946846a6a0c594e915a550775f6fd751592f97f0fa0d220935d4efa8c517ed8b8e61f3cc895dfa786d9c57f6bfc064a5b0fbd657bb00b94e2240213ca09a2da"),
+	//				"publicKey":decodeHexString("b8e61f3cc895dfa786d9c57f6bfc064a5b0fbd657bb00b94e2240213ca09a2da")};
 	
 	//console.log('box secret key: ', nacl.box.keyPair().secretKey.length);
 	//console.log('sign secret key: ', nacl.sign.keyPair().secretKey.length);
+	/*
 	var message = toArray('/dir/testshareid');
 	var signature = nacl.sign.detached(message, session.secretKey);
 	console.log('test signature: ', stringify(signature));
+	*/
 	
 	//test if we can decrypt it!
-	var res = nacl.sign.detached.verify(message, signature, session.publicKey);
-	console.log('verify: ', res);
+	//var res = nacl.sign.detached.verify(message, signature, session.publicKey);
+	//console.log('verify: ', res);
 	
 	
-	this.session[''] = [session.publicKey];
+	//this.session[''] = [session.publicKey];
 	
 	
 	//this.userPublicKey = 'test';
@@ -152,11 +157,21 @@ HandshakeService.prototype.setUserPublicKey = function(key) {
 
 HandshakeService.prototype.node = function(nodeId, input) {
 	console.log("nodeId & input.length: ", nodeId, input.length);
-	if(input.length == 32) {
-		var verifier =  stringify(hash(input), 32);
+	console.log('input: ', input);
+	if(input.length == 96) { //direct handshake, for intranet case
+		//sessionKey = input.subarray()
+		var verifier =  input.substr(0, 32);
+		
 		console.log('verifier: ', verifier);
 		
 		if (verifier!=nodeId) return false;
+		
+		var sessionKey = decodeHexString(input.substr(32, 64));
+		console.log('sessionKey: ', sessionKey);
+		//remember session
+		if (typeof(this.session[nodeId]) == 'undefined')
+			this.session[nodeId] = [];
+		this.session[nodeId].push(sessionKey);
 		//console.log('here', nodeId, hash(input));	
 	}
 	else if(input.length == 104) {
@@ -215,6 +230,17 @@ HandshakeService.prototype.node = function(nodeId, input) {
 	*/
 	return true;
 }
+
+
+//generate the sign-pair
+/*
+HandshakeService.prototype.generateSessionKey = function(nodeId) {
+	var sessionKeyPair =  nacl.sign.keyPair();
+	//register session public key
+	this.nodes[nodeID] = sessionKeyPair.publicKey;
+	return sessionKeyPair;
+}
+*/
 
 /* Verify if a request belongs to a valid session */
 /*
@@ -316,25 +342,30 @@ HandshakeService.prototype.verifySignature = function(req, signature) {
 		baseString+="&" + requestParameterString;
 	}
 	console.log('baseString: ', baseString);
+	console.log('signature: ', signature);
 	
 	//FIXME: correct this!
-	var nodeId = '';
+	//var nodeId = '';
 	
 	var arrPath = join([baseString]);
 	var arrSign = decodeHexString(signature);
 	//for (k in this.session[nodeId]) {
-	for (var i = 0; i < this.session[nodeId].length; i++) {
-		var k = this.session[nodeId][i];
-		//var sessionKey = this.session[nodeId][k];
-		console.log("session: ", stringify(k));
+	for (var nodeId in this.session) { //our session will contain just one node anyway
+		console.log('nodeId: ', nodeId);
 		
-		var res = nacl.sign.detached.verify(arrPath, arrSign, k);
-		//var res = false;
-		if (res) {
-			console.log('request OK');
-			return true; //find the session that match!
+		for (var i = 0; i < this.session[nodeId].length; i++) {
+			var k = this.session[nodeId][i];
+			//var sessionKey = this.session[nodeId][k];
+			console.log("session: ", stringify(k));
+			
+			var res = nacl.sign.detached.verify(arrPath, arrSign, k);
+			//var res = false;
+			if (res) {
+				console.log('request OK');
+				return true; //find the session that match!
+			}
+			//FIXME: verify if res is same as path!
 		}
-		//FIXME: verify if res is same as path!
 	}
 	//None of the session key can verify the message!
 	return false; 
@@ -382,6 +413,7 @@ HandshakeService.prototype.verifyRequest = function(req) {
 	//console.log(naclParams);
 }
 
+//Generate a key pair that starts with FC (cjdns address generation protocol)
 function createKeypair() {
 	return pair(0xfc);
 }
