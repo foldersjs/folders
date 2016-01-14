@@ -69,16 +69,14 @@ FoldersFs.prototype.stat = function (uri, callback) {
 
     var self = this;
 
-
-
     //{ mode, isDirectory(), size, mtime }
 
     uri = path.normalize(uri);
 
     var dirname = path.dirname(uri);
     var basename = path.basename(uri);
-
-
+	
+	
 
     if (uri == '.' || uri == '/') { //allow browsing root and current dir
         callback(null, new Stats(folder_attr));
@@ -93,8 +91,8 @@ FoldersFs.prototype.stat = function (uri, callback) {
             console.log("error in fs.js stat() ", err);
             return callback(err, null);
         }
-
-
+		
+		//console.log(res);
         var stats;
         for (var i = 0; i < res.length; ++i) {
             console.log('extension: ', res[i].extension);
@@ -119,7 +117,7 @@ FoldersFs.prototype.stat = function (uri, callback) {
                 return stats.extension == "+folder";
                 //return true;
             };
-            console.log('stats: ', stats);
+            //console.log('stats: ', stats);
             return callback(null, stats);
         } else {
             console.log('stats not found, DEBUG:');
@@ -147,10 +145,11 @@ FoldersFs.prototype.readFile = function (path, callback) {
 
         var stream = res.stream;
 
-        var data = null;
+        var data = '' ;
         stream.on('data', function (chunk) {
             data += chunk;
         });
+		
         stream.on('end', function () {
             callback(null, data);
         });
