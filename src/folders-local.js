@@ -5,6 +5,7 @@
  */
 var fs = require('fs');
 var path = require('path');
+var mime = require('mime');
 
 var LocalFio = function (prefix, options) {
 
@@ -137,9 +138,11 @@ LocalFio.prototype.asFolders = function (dir, files) {
         o.fullPath = path.relative('.', path.resolve(dir, o.name));
         o.uri = "#" + this.prefix + o.fullPath;
         o.size = 0;
-        o.extension = "txt";
-        o.type = "text/plain";
-
+		o.extension = path.extname(o.name).substr(1, path.extname(o.name).length - 1) || '+folder';
+		o.type = (o.extension == '+folder' ? "" : mime.lookup(o.extension));
+		
+        //o.extension = "txt";
+        //o.type = "text/plain";
         o.modificationTime = +new Date();
         out.push(o);
     }
