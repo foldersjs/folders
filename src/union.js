@@ -75,6 +75,8 @@ UnionFio.prototype.asView = function (path, viewfs) {
     if (path.substr(0, 1) != "/") path = "/" + path;
 
     var subpos = path.indexOf("/", 1);
+    
+    //get the base
     var root = subpos > -1 ? path.substr(0, subpos) : path;
     var name = root.substr(1);
    // console.log("asView", name, path);
@@ -177,21 +179,27 @@ UnionFio.prototype.umount = function (mountPoint) {
 };
 
 UnionFio.prototype.ls = function (path, cb) {
+    
+    console.log('UnionFio ls', path);
+    
     var self = this;
 
     var fio = this.fio;
     var prefix = this.prefix;
     var paths = this.fuse;
 
-    if (path == "" || path.substr(0, 1) != "/")
-        path = "/" + path;
+    
+    //if (path == "" || path.substr(0, 1) != "/")
+    //    path = "/" + path;
 
 
     var multicast = false;
 
     var out = [];
+    //prefix path with '/'
     if (path == "" || path.substr(0, 1) != "/")
         path = "/" + path;
+    //postfix path with '/'
     if (path == "" || path.substr(-1) != "/")
         path = path + "/";
 
@@ -239,10 +247,24 @@ UnionFio.prototype.ls = function (path, cb) {
         }
         var mount = parts.base;
         var uri = parts.path;
+        
+        console.log('mount = ' + mount + ' uri ' + uri);
+        
         mount.ls(uri, function (err, data) {
 
             if (err) {
                 return cb(err);
+            }
+            
+            console.log('ls data', data);
+            
+            //var data2 = [];
+            //prefix the mount name in front of data!
+            for (var i = 0; i < data.length; i++) {
+                //data2.append('/' + parts.name   + '/' + d);
+                //FIXME: difference between uri and fullPath!?
+                data[i].uri = '/' + parts.name + data[i].uri;
+                data[i].fullPath = '/' + parts.name + data[i].fullPath;
             }
 
             cb(null, data);
