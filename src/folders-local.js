@@ -8,9 +8,10 @@ var path = require('path');
 var mime = require('mime');
 
 var LocalFio = function (prefix, options) {
-
     this.options = options || {};
     this.prefix = prefix || "/http_window.io_0:local/";
+    this.rootDir = this.options.rootDir || ''; //root folder to display content
+    console.log('localFio rootDir: ', this.rootDir);
 };
 
 LocalFio.dataVolume = function () {
@@ -33,6 +34,16 @@ LocalFio.prototype.normalizePath = function (uri) {
         var preuri = uri.substr(uri.indexOf('@') + 1).substr(prefix.length);
         uri = preuri;
     }
+    
+    if (this.rootDir!='') { //append rootDir to this uri
+        if (uri.indexOf('/')!=0) {
+            uri = '/' + uri;
+        }
+        uri = this.rootDir + uri;
+    }
+    
+    console.log('new uri: ', uri);
+    
     //console.log("normalizePath in folders-local,\n",{prefix: prefix, op: op, path: uri/*, pre: preuri*/});
     var uri = path.resolve(path.normalize(uri || "."));
     return uri;
@@ -80,6 +91,11 @@ LocalFio.prototype.write = function (uri, data, cb) {
 
 
 LocalFio.prototype.ls = function (uri, cb) {
+    //specify rootDir:
+    
+    
+    
+    console.log('local-fs ls', uri);
     var self = this;
 
     var uri = this.normalizePath(uri);
@@ -184,6 +200,7 @@ var cat = function (uri, cb) {
 
 var write = function (uri, data, cb) {
     try {
+        console.log("write to file: ", uri);
         var file = fs.createWriteStream(uri);
 
         if (data instanceof Buffer) {
