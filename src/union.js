@@ -424,6 +424,38 @@ UnionFio.prototype.write = function (path, data, cb) {
 
 }
 
+UnionFio.prototype.unlink = function (path, cb) {
+    var self = this;
+
+    var prefix = this.prefix;
+    var paths = this.fuse;
+    var multicast = false;
+
+    if (path == "" || path.substr(0, 1) != "/")
+        path = "/" + path;
+
+    var provider = this.asView(path, paths);
+    if (!provider || !provider.base) {
+
+        return cb(new Error("union unlink: missing destination file operand"));
+    }
+
+
+    var mount = provider.base;
+    var uri = provider.path;
+    mount.unlink(uri, function (err, result) {
+
+        if (err) {
+            console.log("Error in union unlink() " + err);
+            return cb(err);
+        }
+
+        return cb(null, result);
+
+    });
+
+}
+
 // check if the provider of the path support the specified feature
 UnionFio.prototype.feature = function(path, feature) {
     var self = this;
