@@ -288,13 +288,18 @@ UnionFio.prototype.ls = function (path, cb) {
  * @param result, json object including the stream, size, name information. example {stream: readableStream, size: 1024, name: "testfile"}
  * @param err, the err message of callback, the result param will be null if error, please check the err before using the result information.
  */
-UnionFio.prototype.cat = function (path, cb) {
+UnionFio.prototype.cat = function (data, cb) {
     var self = this;
 
     var prefix = this.prefix;
     var paths = this.fuse;
     var multicast = false;
 
+    var path = data;
+    if (typeof(data) === 'object'){
+      // a object param with length, offset param
+      path = data.path;
+    }
 
     if (path == "" || path.substr(0, 1) != "/")
         path = "/" + path;
@@ -327,8 +332,17 @@ UnionFio.prototype.cat = function (path, cb) {
 
     var mount = provider.base;
     var uri = provider.path;
+    var catParam = uri;
+    //if the provider support range cat and we have the length/offset param.
+    if (typeof(data) !== 'string' && mount.features && mount.features.range_cat){
+      catParam = {
+          path: uri,
+          offset: data.offset,
+          length: data.length
+      };
+    }
 
-    mount.cat(uri, function (err, result) {
+    mount.cat(catParam, function (err, result) {
 
         if (err) {
             console.log("Error in union cat() " + err);
@@ -408,6 +422,31 @@ UnionFio.prototype.write = function (path, data, cb) {
         return cb();
     });
 
+}
+
+// check if the provider of the path support the specified feature
+UnionFio.prototype.feature = function(path, feature) {
+    var self = this;
+
+    var prefix = this.prefix;
+    var paths = this.fuse;
+    var multicast = false;
+
+    if (path == "" || path.substr(0, 1) != "/")
+	path = "/" + path;
+
+    var provider = this.asView(path, paths);
+    if (!provider || !provider.base) {
+	return cb(new Error("union cp: missing destination feature operand"));
+    }
+
+    var mount = provider.base;
+    var uri = provider.path;
+
+    if (mount.features && mount.features[feature])
+	return true;
+
+    return false;
 }
 
 // FIXME : Dont need this code . results from various providers will already
