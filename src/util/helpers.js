@@ -11,8 +11,10 @@
  
  
 // Favored utility libraries.  
-var jsonSafeStringify = require('json-stringify-safe')  
+var jsonSafeStringify = require('json-stringify-safe');
+var crypto = require('crypto');
 
+var RANDOM_CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 
 /*
  *
@@ -50,9 +52,42 @@ var isStringEmpty = function(string){
 		console.log('Wrong configuration during start up :');
  		process.exit(1);
 	}		
-};		
+};
+
+
+/**
+ * Random name generator based on crypto.
+ * Adapted from http://blog.tompawlak.org/how-to-generate-random-values-nodejs-javascript
+ *
+ * @param {Number} howMany
+ * @return {String}
+ * @api private
+ */
+function _randomChars(howMany) {
+  var
+    value = [],
+    rnd = null;
+
+  // make sure that we do not fail because we ran out of entropy
+  try {
+    rnd = crypto.randomBytes(howMany);
+  } catch (e) {
+    rnd = crypto.pseudoRandomBytes(howMany);
+  }
+
+  for (var i = 0; i < howMany; i++) {
+    value.push(RANDOM_CHARS[rnd[i] % RANDOM_CHARS.length]);
+  }
+
+  return value.join('');
+}
+
+function getTmpFilename() {
+  return _randomChars(12);
+}
 
 	
 exports.safeStringify     = safeStringify
 exports.uuid              = uuid
 exports.isStringEmpty     = isStringEmpty
+exports.getTmpFilename    = getTmpFilename
