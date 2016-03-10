@@ -81,10 +81,10 @@ ls(uri, cb)
 
 //the param of the cb function
 /**
- * @param files ,the file information.
  * @param err, the err message, the files will be null if err, please check the err before using the files information.
+ * @param files ,the file information if success
  */
-cb(files,err);
+cb(err, files);
 ```
 
 ###cat
@@ -100,10 +100,10 @@ cat(uri, cb);
 
 //the callback function
 /**
- * @param result, json object including the stream, size, name information. example {stream: readableStream, size: 1024, name: "testfile"}
  * @param err, the err message of callback, the result param will be null if error, please check the err before using the result information.
+ * @param result, json object including the stream, size, name information. example {stream: readableStream, size: 1024, name: "testfile"}
  */
- cb(result,err)
+ cb(err, result)
 ```
 
 ### write
@@ -120,10 +120,10 @@ write(path,data,cb);
 
 //the callback function
 /**
- * @param result, string message, example, "write success"
  * @param err, the err message of callback, the result param will be null if error, please check the err before using the result information.
+ * @param result, string message, example, "write success"
  */
-cb(result,err);
+cb(err, result);
 
 ``` 
 

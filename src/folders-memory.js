@@ -51,14 +51,15 @@ MemoryFio.prototype.ls = function(path, cb) {
   var files = [];
   var file;
   for ( var key in fileSystem) {
-    if (p.dirname(key) === path) {
+    if (p.dirname(key) === uri) {
       file = fileSystem[key];
       files.push({
         name : file.name,
         size : file.size,
         extension : '+folder',
         type : '',
-        fullPath : path + file.name,
+        uri: file.uri,
+        fullPath : file.uri,
         modificationTime : file.modificationTime
       });
     }
@@ -171,6 +172,7 @@ var write = function(uri, data, cb) {
     });
     data.on('end', function() {
       fileSystem[uri] = {
+        uri: uri,
         name : p.basename(uri),
         size : len,
         data : chunks,

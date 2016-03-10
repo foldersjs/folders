@@ -122,15 +122,14 @@ UnionFio.prototype.cp = function (source, destination, cb) {
 
     var sourceProvider = this.asView(source, paths);
     var destinationProvider = this.asView(destination, paths);
-
     if (!sourceProvider || !sourceProvider.base) {
 
-        return cb(new Error("union cp: missing source file operand "));
+        return cb("union cp: missing source file operand ");
     }
 
     if (!destinationProvider || !destinationProvider.base) {
 
-        return cb(new Error("union cp: missing destination file operand"));
+        return cb("union cp: missing destination file operand");
     }
 
     var sourceMount = sourceProvider.base;
@@ -138,22 +137,19 @@ UnionFio.prototype.cp = function (source, destination, cb) {
 
     var destinationMount = destinationProvider.base;
     var destinationUri = destinationProvider.path;
+    if (sourceMount === destinationMount && sourceUri === destinationUri) {
 
-    if (sourceUri === destinationUri) {
-
-        return cb(new Error("Error! Both Source and destination are same "));
+        return cb("Error! Both Source and destination are same ");
     }
 
     sourceMount.cat(sourceUri, function (err, source_r) {
 
         var file = source_r.stream;
-
         destinationMount.write(destinationUri, file, function (err) {
 
             if (err) {
                 console.log("error occured in union cp() ", err);
                 return cb(err);
-
             }
 
             cb();
@@ -180,7 +176,7 @@ UnionFio.prototype.umount = function (mountPoint) {
 
 UnionFio.prototype.ls = function (path, cb) {
     
-    console.log('UnionFio ls', path);
+    //console.log('UnionFio ls', path);
     
     var self = this;
 
@@ -248,7 +244,7 @@ UnionFio.prototype.ls = function (path, cb) {
         var mount = parts.base;
         var uri = parts.path;
         
-        console.log('mount = ' + mount + ' uri ' + uri);
+        //console.log('mount = ' + mount + ' uri ' + uri);
         
         mount.ls(uri, function (err, data) {
 
@@ -256,7 +252,7 @@ UnionFio.prototype.ls = function (path, cb) {
                 return cb(err);
             }
             
-            console.log('ls data', data);
+            //console.log('ls data', data);
             
             //var data2 = [];
             //prefix the mount name in front of data!
@@ -309,7 +305,7 @@ UnionFio.prototype.cat = function (data, cb) {
         for (var i in paths) {
             var mount = paths[i];
             var uri = normalizePath(mount.prefix, path);
-            console.log("mount cat", uri, mount.prefix);
+            //console.log("mount cat", uri, mount.prefix);
 
             mount.cat(uri, function (result, err) {
                 if (err) {
@@ -381,7 +377,7 @@ UnionFio.prototype.write = function (path, data, cb) {
         for (var i in paths) {
             var mount = paths[i];
             var uri = normalizePath(mount.prefix, path);
-            console.log("mount write", uri, mount.prefix);
+            //console.log("mount write", uri, mount.prefix);
 
             // write buffer data or pipe the input stream to dest writable stream
             mount.write(uri, data, function (result, err) {

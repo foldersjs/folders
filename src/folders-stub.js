@@ -18,7 +18,7 @@ var StubFs = function(prefix) {
 StubFs.prototype.stubData = {
     lsMime: ["Content-Type:application/json"],
     lsData: [{"name":"stub-file.txt",
-      "uri":"#/67ee0a44-5eee-40a6-a50a-96d4665e554e/stub-file.txt",
+      "uri":"/stub-file.txt",
       "modificationTime":"1378590055000", //Note: this is Unix timestamp premultiplied by 1000
 	  //"modificationTime": "Mon, 10 Oct 2011 23:24:11 GMT",
 	  "fullPath":"/stub-file.txt",
