@@ -1,6 +1,6 @@
-var UnionFio = require('../union');
+var UnionFio = require('../src/union');
 var FoldersTest = require('./test-folders');
-var Fio = require('../api');
+var Fio = require('../src/api');
 
 var fio = new Fio();
 
@@ -36,4 +36,4 @@ var unionfs = new UnionFio(fio, mounts, {
 });
 
 var foldersTest = new FoldersTest(unionfs);
-foldersTest.test('.');
+foldersTest.test('/memory/');

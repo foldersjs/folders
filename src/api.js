@@ -9,7 +9,7 @@
 
 // todo: close down routes for garbage collection
 
-var request = require('request');
+//var request = require('request');
 var BufferStream = require('./stream-buffer');
 var Handshake = require('./handshake');
 var route = {};

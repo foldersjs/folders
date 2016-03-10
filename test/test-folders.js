@@ -21,45 +21,44 @@ module.exports = FoldersTest;
  */
 FoldersTest.prototype.test = function(dir) {
 	var folder = this.folder;
-	console.log("start test for folders,", folder);
+	console.log("[Test-folders] start test for folders,", folder);
 
 	if (dir.length && dir.substr(-1) != "/")
 		dir = dir + "/";
 
 	// step 1: ls command
-	console.log("ls dir/files in dir,", dir);
-	folder.ls(dir, function(data, err) {
+	console.log("[Test-folders] ls dir/files in dir,", dir);
+	folder.ls(dir, function(err, data) {
 		if (err) {
 			console.error(err);
 			// TODO assert false
 			return;
 		}
-		console.log('ls result:', data);
+		console.log('[Test-folders] ls result:', data);
 
 		// step 2: write command, put data(Buffer or Stream) to folder provider
 		// var buf = new Buffer((new Array(960 + 1)).join("Z"));
 		// NOTES, here we get a simple readable stream by reading a test file local
 		var testDataFile = dir + "data/test_dest.dat";
-		console.log("testDataFile,", testDataFile);
+		console.log("[Test-folders] testDataFile,", testDataFile);
 		var stream = fs.createReadStream('./data/test.txt');
-		folder.write(testDataFile, stream, function(data, err) {
+		folder.write(testDataFile, stream, function(err, data) {
 			if (err) {
 				console.error(err);
 				// TODO assert false
 				return;
 			}
-			console.log('write result,', data);
+			console.log('[Test-folders] write result,',testDataFile);
 
 			// step 3: cat the file uploaded
-			folder.cat(testDataFile, function(data, err) {
+			folder.cat(testDataFile, function(err, data) {
 				if (err) {
 					console.error(err);
 					// TODO assert false
 					return;
 				}
 
-				console.log('cat result,', data);
-				// TODO compare the 'data' to the 'Buffer/Stream' we uploaded
+				console.log('[Test-folders] cat file ',testDataFile,' success, stream.size:', data.size);
 			});
 
 		});
