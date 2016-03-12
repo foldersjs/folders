@@ -1,33 +1,93 @@
 var minimatch = require('minimatch');
 var util = require('util');
-var Union = require('./union.js');
+var Union = require('./union');
+var Fio = require('./api');
 
-var FoldersSyncUnion = function(fio, mounts, opts, prefix) {
-  Union.call(this, fio, mounts, opts, prefix);
+var fio = new Fio();
+
+/**
+ * Sync Union Folders constructor
+ * 
+ * @param mounts,
+ *          the source/dest provider informations.
+ * 
+ * <pre>
+ * // example to sync file from root of STUB to root of HDSF folders
+ * {
+ *   // the source information
+ *   source : {
+ *     module : 'stub',
+ *     opts : null,
+ *     dir : '/'
+ *   },
+ *   // the destination information
+ *   destination : {
+ *     module : 'hdfs', // module name
+ *     // options for init module
+ *     opts : {
+ *       baseurl : 'webhdfs-url',
+ *       username : 'webhdfs-username'
+ *     },
+ *     // the dir used to sync file
+ *     dir : '/'
+ *   }
+ * }
+ * </pre>
+ * 
+ * @param options
+ * 
+ * Sync Options:
+ * 
+ * <pre>
+ * {
+ * 
+ *   // filter: the filename regex filter, the regex for filter the file in source/dest,
+ *   // Default to null which not filter any file
+ *   filter : '*.txt',
+ * 
+ *   // if Ignore case of file name when compare file
+ *   ignoreCase : true,
+ * 
+ *   // if Compare size when compare file
+ *   compareSize : true
+ * 
+ *   // TODO: Thread number used for copy file.
+ *   threadNum : 5,
+ * 
+ *   // TODO: Compare logic handler, may support different custom logic functions for LS/Cat ...
+ *   // by default, we do subtraction which meaning only show the file in source but not in dest.
+ *   logicHandler: resultFolders = function(sourceFolders, destFolders, options);
+ * }
+ * </pre>
+ * 
+ * 
+ */
+var FoldersSyncUnion = function(mounts, options, prefix) {
+
+  prefix = prefix || '/http_folders.io_0:sync-union/';
+  this.prefix = prefix;
+
+  // The source and dest mounts used to init Union.js
+  var sourceMount = {}, destMount = {};
+  sourceMount[mounts.source.module] = fio.provider(mounts.source.module, mounts.source.opts);
+  destMount[mounts.destination.module] = fio.provider(mounts.destination.module, mounts.destination.opts);
+  var unionMounts = [ sourceMount, destMount ];
+
+  // a special union folders with two provider (source/dest)
+  this.union = new Union(fio, unionMounts, null, prefix);
+  this.sourceDir = normalizeDirPath(mounts.source.module, mounts.source.dir);
+  this.destinationDir = normalizeDirPath(mounts.destination.module, mounts.destination.dir);
+  this.options = options || {};
 }
 
-// NOTE, a sub of Union folders
-util.inherits(FoldersSyncUnion, Union);
+// NOTE, use union as a property in Sync to instead of inhert from Union
+// util.inherits(FoldersSyncUnion, Union);
 
 module.exports = FoldersSyncUnion;
 
 /**
  * Sync files from source dir path to destination dir Path
  * 
- * @param sourcePath:
- *          the source dir path
- * 
- * @param destinationPath:
- *          the destination dir path
- * 
- * @param Options:
- *          <ul>
- *          <li> filter: the filename regex filter, the regex for filter the file in source/destination, Default to null
- *          which not filter any file</li>
- *          <li> ignoreCase: Ignores case when comparing names. Defaults to 'false'.</li>
- *          <li> compareSize: Compare the file size as well</li>
- *          <li> threadNum: number of maximum concurrent transfer threads to copy</li>
- *          </ul>
  * @param cb
  *          cb(err, syncList);
  *          <ul>
@@ -36,13 +96,12 @@ module.exports = FoldersSyncUnion;
  *          </ul>
  */
 
-FoldersSyncUnion.prototype.sync = function(sourcePath, destinationPath, options, cb) {
+FoldersSyncUnion.prototype.sync = function(cb) {
+  var union = this.union;
   var self = this;
-
-  if (sourcePath && sourcePath.length > 0 && sourcePath[sourcePath.length - 1] != '/')
-    sourcePath = sourcePath + '/';
-  if (destinationPath && destinationPath.length > 0 && destinationPath[destinationPath.length - 1] != '/')
-    destinationPath = destinationPath + '/';
+  var sourcePath = this.sourceDir;
+  var destinationPath = this.destinationDir;
+  var options = this.options;
 
   var today = new Date().toISOString().slice(0, 10);// .replace(/-/g,"");
   // TODO need the folder to support CREATE_FOLDER operation.
@@ -50,51 +109,64 @@ FoldersSyncUnion.prototype.sync = function(sourcePath, destinationPath, options,
   // var destinationDir = destinationPath + today + '/';
   var destinationDir = destinationPath;
 
-  // FIXME, may ls the source/destination concurrently.
-  self.ls(sourcePath, function(error, source) {
-    if (error) {
-      return cb('ls source path error,' + error, null);
+  // filter the folders by option.filter, only looks at file names that match a pattern
+  // Compare the source folder and destination folder by name ( may and size)
+  self.compareFolder(sourcePath, destinationPath, options, function(err, syncList) {
+    if (err) {
+      return cb(err, null);
     }
 
-    self.ls(destinationPath, function(err, destination) {
-      if (error) {
-        return cb('ls destination path error,' + error, null);
+    if (syncList.length <= 0) {
+      return cb(null, syncList);
+    }
+
+    // Copy the Files in syncList, from source to dest.
+    // FIXME, need to support copy files concurrently using multi-thread, threadNum to set number of maximum
+    // concurrent transfer threads.
+    var fileCounter = 0; // syncList.length;
+    var syncResult = [];
+    var cpFileCb = function(err, result) {
+
+      if (err) {
+        return cb('cp file error,' + syncList[fileCounter].path, null);
       }
 
-      // filter the folders by option.filter, only looks at file names that match a pattern
-      // Compare the source folder and destination folder by name ( may and size)
-      var syncList = self.compareFolder(source, destination, options);
-      if (syncList.length <= 0) {
-        return cb(null, syncList);
+      syncResult.push(syncList[fileCounter].uri + ' ==> ' + destinationDir + syncList[fileCounter].name);
+      fileCounter++;
+
+      if (fileCounter < syncList.length) {
+        console.log('sync #' + (fileCounter + 1) + ' file, ', syncList[fileCounter].name);
+        union.cp(syncList[fileCounter].uri, destinationDir + syncList[fileCounter].name, function(err, result) {
+        });
+      } else {
+        console.log('sync finished, sync ' + syncList.length + ' file(s) in total');
+        cb(null, syncResult); // copy finished
       }
+    }
+    console.log('sync #' + (fileCounter + 1) + ' file, ', syncList[fileCounter].name);
+    union.cp(syncList[fileCounter].uri, destinationDir + syncList[fileCounter].name, cpFileCb);
 
-      // Copy the Files in syncList, from source to dest.
-      // FIXME, need to support copy files concurrently using multi-thread, threadNum to set number of maximum
-      // concurrent transfer threads.
-      var fileCounter = 0; // syncList.length;
-      var syncResult = [];
-      var cpFileCb = function(err, result) {
+  });
+}
 
-        if (err) {
-          return cb('cp file error,' + syncList[fileCounter].path, null);
-        }
+/**
+ * Ls the files in Sync Union
+ * 
+ * by default, SyncUnion will ls the subtraction of source - destinationPath
+ */
+FoldersSyncUnion.prototype.ls = function(cb) {
+  var union = this.union;
+  var self = this;
+  var sourcePath = this.sourceDir;
+  var destinationPath = this.destinationDir;
+  var options = this.options;
 
-        syncResult.push(syncList[fileCounter].uri + ' ==> ' + destinationDir + syncList[fileCounter].name);
-        fileCounter++;
+  self.compareFolder(sourcePath, destinationPath, options, function(err, result) {
+    if (err) {
+      return cb(err, null);
+    }
 
-        if (fileCounter < syncList.length) {
-          console.log('sync #' + (fileCounter + 1) + ' file, ', syncList[fileCounter].name);
-          self.cp(syncList[fileCounter].uri, destinationDir + syncList[fileCounter].name, function(err, result) {
-          });
-        } else {
-          console.log('sync finished, sync ' + syncList.length + ' file(s) in total');
-          cb(null, syncResult); // copy finished
-        }
-      }
-      console.log('sync #' + (fileCounter + 1) + ' file, ', syncList[fileCounter].name);
-      self.cp(syncList[fileCounter].uri, destinationDir + syncList[fileCounter].name, cpFileCb);
-
-    });
+    return cb(null, result);
   });
 }
 
@@ -103,6 +175,7 @@ FoldersSyncUnion.prototype.sync = function(sourcePath, destinationPath, options,
  * 
  * @param folders:
  *          the folders array to filter
+ * @filter: the filter used for filter file
  * 
  */
 FoldersSyncUnion.prototype.projection = function(folders, filter) {
@@ -134,28 +207,51 @@ var match = function(fileName, pattern) {
   return false;
 }
 
-
-
 /**
  * Compare folder. Compare all files in folders.
  * 
  * @param source ,
- *          source folders, a file metadata array.
+ *          source dir path
  * @param destination,
- *          destination folders, a file metadata array.
+ *          destination dir path
  * @options compare options,
  * 
  * return all the files that in source folders but not in destination folders
  */
 // FIXME do we want to compare sub-folders?
 // if yes, do we want to apply the filter to the sub-folders ?
-FoldersSyncUnion.prototype.compareFolder = function(source, destination, options) {
+FoldersSyncUnion.prototype.compareFolder = function(sourcePath, destinationPath, options, cb) {
+  var union = this.union;
+  var self = this;
 
-  if (options.filter) {
-    source = this.projection(source, options.filter);
-    destination = this.projection(destination, options.filter);
-  }
+  // FIXME, may ls the source/destination concurrently.
+  union.ls(sourcePath, function(error, source) {
+    if (error) {
+      return cb('ls source path error,' + error, null);
+    }
 
+    union.ls(destinationPath, function(err, destination) {
+      if (error) {
+        return cb('ls destination path error,' + error, null);
+      }
+
+      if (options.filter) {
+        source = self.projection(source, options.filter);
+        destination = self.projection(destination, options.filter);
+      }
+
+      if (!options.logic)
+        cb(null, foldersSubtraction(source, destination, options));
+      else if (typeof (options.logic) == 'function')
+        cb(null, options.logic(source, destination, options));
+      else
+        cb('error logic handler, not a function.');
+
+    });
+  });
+}
+
+var foldersSubtraction = function(source, destination, options) {
   var syncList = [];
   var ifExist = false;
   for (var i = 0; i < source.length; i++) {
@@ -203,4 +299,15 @@ var compareFile = function(source, destination, options) {
   } else {
     return source.name.toLowerCase() == destination.name.toLowerCase() && source.size == destination.size;
   }
+}
+
+var normalizeDirPath = function(module, dir) {
+  if (!dir || dir == '')
+    dir = '/';
+  if (dir[dir.length - 1] != '/')
+    dir = dir + '/';
+  if (dir[0] != '/')
+    dir = '/' + dir;
+  dir = '/' + module + dir;
+  return dir;
 }

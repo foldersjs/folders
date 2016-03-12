@@ -41,7 +41,8 @@ StubFs.prototype.stubData = {
 };
 
 StubFs.prototype.ls = function(path, cb) {
-	cb(null,this.stubData.lsData);
+  var data = JSON.parse(JSON.stringify(this.stubData.lsData));
+	cb(null,data);
 };
 
 StubFs.prototype.cat = function(path, cb) {

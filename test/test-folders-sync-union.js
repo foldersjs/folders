@@ -1,16 +1,21 @@
-var UnionFio = require('../src/folders-sync-union');
+var SyncUnionFio = require('../src/folders-sync-union');
 var FoldersTest = require('./test-folders');
-var Fio = require('../src/api');
 
-var fio = new Fio();
-
-var mounts = [ {
-  "stub" : fio.provider("stub")
-}, {
-  "memory" : fio.provider("memory")
-} ];
-
-var unionfs = new UnionFio(fio, mounts);
+var mounts = {
+  source : {
+    module : 'stub',
+    // opts : null,
+    dir : '/'
+  },
+  destination : {
+    module : 'memory',
+    // opts : null,
+    dir : '/'
+  }
+/*
+ * destination :{ module: 'hdfs', opts : { baseurl : "http://45.55.223.28/webhdfs/v1/data/", username : 'hdfs' } }
+ */
+};
 
 var syncOptions = {
   // threadNum : 5,
@@ -19,19 +24,39 @@ var syncOptions = {
   compareSize : true
 };
 
+var syncUnionFS = new SyncUnionFio(mounts, syncOptions);
+
 // a test case sync the *.txt file in the root of STUB folder to root of Memory folder.
-unionfs.sync('/stub/', '/memory/', syncOptions, function(err, result) {
+syncUnionFS.ls(function(err, result) {
   if (err) {
-    return console.log('union sync error: ', err);
+    return console.log('ls error: ', err);
   }
 
-  console.log('union sync success, ', result);
+  console.log('ls sync union before sync, ', result);
 
-  unionfs.ls('/memory/', function(err, files) {
+  syncUnionFS.sync(function(err, result) {
     if (err) {
-      return console.log('ls memory root failed,', err);
+      return console.log('union sync error: ', err);
     }
 
-    console.log('ls memory folders after file sync, ', files);
+    console.log('union sync success, ', result);
+
+    syncUnionFS.ls(function(err, result) {
+      if (err) {
+        return console.log('ls error: ', err);
+      }
+
+      // expect zero length list after sync
+      console.log('ls sync union after sync, ', result);
+
+      // temp hack to verify the final files in momory
+      syncUnionFS.union.ls('/memory/', function(err, files) {
+        if (err) {
+          return console.log('ls memory root failed,', err);
+        }
+
+        console.log('ls memory folders after file sync, ', files);
+      });
+    });
   });
 });

@@ -56,7 +56,7 @@ MemoryFio.prototype.ls = function(path, cb) {
       files.push({
         name : file.name,
         size : file.size,
-        extension : '+folder',
+        extension : file.type != 'FILE' ? '+folder' : '',
         type : '',
         uri: file.uri,
         fullPath : file.uri,
