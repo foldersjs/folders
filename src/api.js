@@ -87,6 +87,11 @@ Fio.union = function() {
 	return require('./union');
 }
 
+Fio.prototype.syncUnion = 
+Fio.syncUnion = function(){
+  return require('./folders-sync-union.js');
+}
+
 // FIXME: Quick hacks as union can't currently mount a single provider as a root.
 Fio.prototype.stub = 
 Fio.stub = function() {

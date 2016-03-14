@@ -165,3 +165,63 @@ unionfs.ls('.', function(data) {
 	// will list the five modules listed as root folders.
 });
 ```
+
+Sync Union Folders API
+=============
+A special Union Folders with two mounts, A source folders and destination folders.
+
+Support ls,sync feature.
+ls: will compare two child systems and show the files only in source folders.
+sync: will sync the files only in source folders to destination folders.
+
+setup a sync Union file system.
+
+```js
+var FoldersSyncUnion = function(mounts, options, prefix){...};
+```
+
+- param mounts, the source/dest provider informations.
+```js
+//example to sync file from root of STUB to root of HDSF folders
+{
+  // the source information
+  source : {
+    module : 'stub',
+    opts : null,
+    dir : '/'
+  },
+  // the destination information
+  destination : {
+    module : 'hdfs', // module name
+    // options for init module
+    opts : {
+      baseurl : 'webhdfs-url',
+      username : 'webhdfs-username'
+    },
+    // the dir used to sync file
+    dir : '/'
+  }
+}
+```
+
+- param options, Sync Options:
+```js
+{
+  // filter: the filename regex filter, the regex for filter the file in source/dest,
+  // Default to null which not filter any file
+  filter : '*.txt',
+
+  // if Ignore case of file name when compare file
+  ignoreCase : true,
+
+  // if Compare size when compare file
+  compareSize : true
+
+  // TODO: Thread number used for copy file.
+  threadNum : 5,
+
+  // TODO: Compare logic handler, may support different custom logic functions for LS/Cat ...
+  // by default, we do subtraction which meaning only show the file in source but not in dest.
+  logicHandler: resultFolders = function(sourceFolders, destFolders, options);
+}
+```
