@@ -41,22 +41,15 @@ syncUnionFS.ls(function(err, result) {
 
     console.log('union sync success, ', result);
 
-    syncUnionFS.ls(function(err, result) {
+    // temp hack to verify the final files in momory
+    var today = new Date().toISOString().slice(0, 10);
+    syncUnionFS.union.ls('/memory/' + today, function(err, files) {
       if (err) {
-        return console.log('ls error: ', err);
+        return console.log('ls memory root failed,', err);
       }
 
-      // expect zero length list after sync
-      console.log('ls sync union after sync, ', result);
-
-      // temp hack to verify the final files in momory
-      syncUnionFS.union.ls('/memory/', function(err, files) {
-        if (err) {
-          return console.log('ls memory root failed,', err);
-        }
-
-        console.log('ls memory folders after file sync, ', files);
-      });
+      console.log('ls memory folders after file sync, ', files);
     });
+
   });
 });

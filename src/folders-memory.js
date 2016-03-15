@@ -43,6 +43,11 @@ MemoryFio.prototype.write = function(path, data, cb) {
   write(uri, data, cb);
 };
 
+MemoryFio.prototype.mkdir = function(path, cb) {
+  // FIXME: MAY create a empty folders
+  cb(null,'create folder success');
+}
+
 MemoryFio.prototype.ls = function(path, cb) {
   var self = this;
 

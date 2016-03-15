@@ -104,49 +104,62 @@ FoldersSyncUnion.prototype.sync = function(cb) {
   var options = this.options;
 
   var today = new Date().toISOString().slice(0, 10);// .replace(/-/g,"");
-  // TODO need the folder to support CREATE_FOLDER operation.
-  // create a data sub-folders in destination folder
-  // var destinationDir = destinationPath + today + '/';
-  var destinationDir = destinationPath;
+  var destinationDir = destinationPath + today + '/';
 
-  // filter the folders by option.filter, only looks at file names that match a pattern
-  // Compare the source folder and destination folder by name ( may and size)
-  self.compareFolder(sourcePath, destinationPath, options, function(err, syncList) {
+  // get the destinationProvider and make dir in destination
+  var destinationProvider = union.asView(destinationPath, union.fuse);
+  var destinationMount = destinationProvider.base;
+  if (!destinationMount || !destinationMount.mkdir) {
+    return cb('destination Provider do not support mkDir feature');
+  }
+
+  destinationMount.mkdir(destinationDir, function(err, result) {
     if (err) {
-      return cb(err, null);
+      return cb('destination Provider mkDir error');
     }
 
-    if (syncList.length <= 0) {
-      return cb(null, syncList);
-    }
+    console.log('destination Provider mkDir successful,', destinationDir);
 
-    // Copy the Files in syncList, from source to dest.
-    // FIXME, need to support copy files concurrently using multi-thread, threadNum to set number of maximum
-    // concurrent transfer threads.
-    var fileCounter = 0; // syncList.length;
-    var syncResult = [];
-    var cpFileCb = function(err, result) {
-
+    // filter the folders by option.filter, only looks at file names that match a pattern
+    // Compare the source folder and destination folder by name ( may and size)
+    self.compareFolder(sourcePath, destinationPath, options, function(err, syncList) {
       if (err) {
-        return cb('cp file error,' + syncList[fileCounter].path, null);
+        return cb(err, null);
       }
 
-      syncResult.push(syncList[fileCounter].uri + ' ==> ' + destinationDir + syncList[fileCounter].name);
-      fileCounter++;
-
-      if (fileCounter < syncList.length) {
-        console.log('sync #' + (fileCounter + 1) + ' file, ', syncList[fileCounter].name);
-        union.cp(syncList[fileCounter].uri, destinationDir + syncList[fileCounter].name, function(err, result) {
-        });
-      } else {
-        console.log('sync finished, sync ' + syncList.length + ' file(s) in total');
-        cb(null, syncResult); // copy finished
+      if (syncList.length <= 0) {
+        return cb(null, syncList);
       }
-    }
-    console.log('sync #' + (fileCounter + 1) + ' file, ', syncList[fileCounter].name);
-    union.cp(syncList[fileCounter].uri, destinationDir + syncList[fileCounter].name, cpFileCb);
 
+      // Copy the Files in syncList, from source to dest.
+      // FIXME, need to support copy files concurrently using multi-thread, threadNum to set number of maximum
+      // concurrent transfer threads.
+      var fileCounter = 0; // syncList.length;
+      var syncResult = [];
+      var cpFileCb = function(err, result) {
+
+        if (err) {
+          return cb('cp file error,' + syncList[fileCounter].path, null);
+        }
+
+        syncResult.push(syncList[fileCounter].uri + ' ==> ' + destinationDir + syncList[fileCounter].name);
+        fileCounter++;
+
+        if (fileCounter < syncList.length) {
+          console.log('sync #' + (fileCounter + 1) + ' file, ', syncList[fileCounter].name);
+          union.cp(syncList[fileCounter].uri, destinationDir + syncList[fileCounter].name, function(err, result) {
+          });
+        } else {
+          console.log('sync finished, sync ' + syncList.length + ' file(s) in total');
+          cb(null, syncResult); // copy finished
+        }
+      }
+      console.log('sync #' + (fileCounter + 1) + ' file, ', syncList[fileCounter].name);
+      union.cp(syncList[fileCounter].uri, destinationDir + syncList[fileCounter].name, cpFileCb);
+
+    });
   });
+
 }
 
 /**
