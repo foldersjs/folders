@@ -1,5 +1,5 @@
 var FoldersTest = require('./test-folders');
-var FoldersLocal = require('../folders-local');
+var FoldersLocal = require('../src/folders-local');
 
 var foldersTest = new FoldersTest(new FoldersLocal());
 foldersTest.test('.');

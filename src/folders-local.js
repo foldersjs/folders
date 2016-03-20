@@ -49,6 +49,10 @@ LocalFio.prototype.normalizePath = function (uri) {
     return uri;
 };
 
+LocalFio.prototype.mkdir = function(path, cb) {
+  fs.mkdir(this.normalizePath(path), cb);
+}
+
 LocalFio.prototype.cat = function (path, cb) {
 
     // FIXME: This method is repeated often and is fragile.
