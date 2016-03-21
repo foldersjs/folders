@@ -45,11 +45,14 @@ var fio = new Fio();
  *   // Default to null which not filter any file
  *   filter : '*.txt',
  * 
- *   // if Ignore case of file name when compare file
- *   ignoreCase : true,
+ *   // if Ignore case of file name when compare file, default false;
+ *   ignoreCase : false,
  * 
- *   // if Compare size when compare file
- *   compareSize : true
+ *   // if Compare size when compare file, default false;
+ *   compareSize : false
+ *  
+ *   // when Compare files in subfolders (sub dir), we compare the full path include the dir or just the file name
+ *   ignoreDirPath: true;
  * 
  *   // TODO: Thread number used for copy file.
  *   threadNum : 5,
@@ -322,7 +325,7 @@ FoldersSyncUnion.prototype.compareFolder = function(sourcePath, destinationPath,
       // }
 
       if (!options.logic)
-        cb(null, foldersSubtraction(source, destination, options));
+        cb(null, self.foldersSubtraction(sourcePath, source, destinationPath, destination, options));
       else if (typeof (options.logic) == 'function')
         cb(null, options.logic(source, destination, options));
       else
@@ -332,13 +335,14 @@ FoldersSyncUnion.prototype.compareFolder = function(sourcePath, destinationPath,
   });
 }
 
-var foldersSubtraction = function(source, destination, options) {
+FoldersSyncUnion.prototype.foldersSubtraction = function(sourcePath, source, destinationPath, destination, options) {
+  var self = this;
   var syncList = [];
   var ifExist = false;
   for (var i = 0; i < source.length; i++) {
     ifExist = false;
     for (var j = 0; j < destination.length; j++) {
-      if (compareFile(source[i], destination[j], options)) {
+      if (self.compareFile(sourcePath, source[i], destinationPath, destination[j], options)) {
         ifExist = true;
         break;
       }
@@ -354,32 +358,65 @@ var foldersSubtraction = function(source, destination, options) {
 /**
  * Copmare two file, may compare file name, size.
  * 
+ * @param sourcePath,
+ *          the base path of source
  * @param source:
- *          source file metadata,
+ *          source folder, source file metadata,
  * @param destination:
- *          destination file metadata.
+ *          the base path of destination
+ * @param destination:
+ *          destination folder, destination file metadata.
  * 
  * @param options:
  *          file compare options args,
  *          <ul>
  *          <li>options.ignoreCase, Ignores case when comparing names. Defaults to 'false'.</li>
  *          <li>options.compareSize, Compare the file size as well.</li>
+ *          <li>options.ignoreDirPath, when compare files in sub folder, ignore dir path or not(true means we only
+ *          compare file name)</li>
  *          </ul>
  */
 // FIXME may also use other metadata options (eg, date..) to compare
-var compareFile = function(source, destination, options) {
+FoldersSyncUnion.prototype.compareFile = function(sourcePath, source, destinationPath, destination, options) {
   var ignoreCase = options.ignoreCase || false;
   var compareSize = options.compareSize || false;
+  var ignoreDirPath = options.ignoreDirPath || true;
 
-  if (ignoreCase == false || compareSize == false) {
-    return source.name == destination.name;
-  } else if (ignoreCase == true || compareSize == false) {
-    return source.name.toLowerCase() == destination.name.toLowerCase();
-  } else if (ignoreCase == false || compareSize == true) {
-    return source.name == destination.name && source.size == destination.size;
-  } else {
-    return source.name.toLowerCase() == destination.name.toLowerCase() && source.size == destination.size;
+  if (compareSize) {
+    if (source.size != destination.size)
+      return false;
   }
+
+  var sourceName = source.name;
+  var destName = destination.name;
+  // when ignoreDirPath is false, we need to compare the whole relative path(dir path + file name)
+  if (!ignoreDirPath) {
+    sourceName = getRelativePath(source.fullPath, sourcePath);
+    destName = getRelativePath(destination.fullPath, destinationPath);
+  }
+
+  if (ignoreCase) {
+    sourceName = sourceName.toLowerCase();
+    destName = destName.toLowerCase();
+  }
+
+  return sourceName == destName;
+
+}
+
+var getRelativePath = function(fullPath, basePath) {
+  // add a leading '/' if not exist
+  if (fullPath && fullPath.length > 0 && fullPath[0] != '/') {
+    fullPath = '/' + fullPath;
+  }
+
+  var idx = fullPath.indexOf(basePath);
+  if (idx < 0) {
+    console.error('full path wrong, can not parse relative path');
+    return fullPath;
+  }
+
+  return fullPath.substr(idx + basePath.length);
 }
 
 var normalizeDirPath = function(module, dir) {
