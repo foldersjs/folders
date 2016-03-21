@@ -43,7 +43,7 @@ syncUnionFS.ls(function(err, result) {
 
     // temp hack to verify the final files in momory
     var today = new Date().toISOString().slice(0, 10);
-    syncUnionFS.union.ls('/memory/' + today, function(err, files) {
+    syncUnionFS.destination.provider.ls('/' + today, function(err, files) {
       if (err) {
         return console.log('ls memory root failed,', err);
       }

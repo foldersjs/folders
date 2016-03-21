@@ -67,21 +67,26 @@ var FoldersSyncUnion = function(mounts, options, prefix) {
   prefix = prefix || '/http_folders.io_0:sync-union/';
   this.prefix = prefix;
 
-  // The source and dest mounts used to init Union.js
-  var sourceMount = {}, destMount = {};
-  sourceMount[mounts.source.module] = fio.provider(mounts.source.module, mounts.source.opts);
-  destMount[mounts.destination.module] = fio.provider(mounts.destination.module, mounts.destination.opts);
-  var unionMounts = [ sourceMount, destMount ];
+  // NOTES, Directly use the origin folders to instead of Union folders.
+  // // The source and dest mounts used to init Union.js
+  // var sourceMount = {}, destMount = {};
+  // sourceMount[mounts.source.module] = fio.provider(mounts.source.module, mounts.source.opts);
+  // destMount[mounts.destination.module] = fio.provider(mounts.destination.module, mounts.destination.opts);
+  // var unionMounts = [ sourceMount, destMount ];
+  // // a special union folders with two provider (source/dest)
+  // this.union = new Union(fio, unionMounts, null, prefix);
+  // this.sourceDir = normalizeDirPath(mounts.source.module, mounts.source.dir);
+  // this.destinationDir = normalizeDirPath(mounts.destination.module, mounts.destination.dir);
 
-  // a special union folders with two provider (source/dest)
-  this.union = new Union(fio, unionMounts, null, prefix);
-  this.sourceDir = normalizeDirPath(mounts.source.module, mounts.source.dir);
-  this.destinationDir = normalizeDirPath(mounts.destination.module, mounts.destination.dir);
+  this.source = mounts.source;
+  this.source.dir = normalizeDirPath(mounts.source.dir);
+  this.source.provider = fio.provider(mounts.source.module, mounts.source.opts).create(prefix);
+  this.destination = mounts.destination;
+  this.destination.dir = normalizeDirPath(mounts.destination.dir);
+  this.destination.provider = fio.provider(mounts.destination.module, mounts.destination.opts).create(prefix);
+
   this.options = options || {};
 }
-
-// NOTE, use union as a property in Sync to instead of inhert from Union
-// util.inherits(FoldersSyncUnion, Union);
 
 module.exports = FoldersSyncUnion;
 
@@ -97,23 +102,19 @@ module.exports = FoldersSyncUnion;
  */
 
 FoldersSyncUnion.prototype.sync = function(cb) {
-  var union = this.union;
   var self = this;
-  var sourcePath = this.sourceDir;
-  var destinationPath = this.destinationDir;
+  var sourcePath = this.source.dir;
+  var destinationPath = this.destination.dir;
   var options = this.options;
 
   var today = new Date().toISOString().slice(0, 10);// .replace(/-/g,"");
   var destinationDir = destinationPath + today + '/';
 
-  // get the destinationProvider and make dir in destination
-  var destinationProvider = union.asView(destinationPath, union.fuse);
-  var destinationMount = destinationProvider.base;
-  if (!destinationMount || !destinationMount.mkdir) {
+  if (!self.destination.provider.mkdir) {
     return cb('destination Provider do not support mkDir feature');
   }
 
-  destinationMount.mkdir(destinationDir, function(err, result) {
+  self.destination.provider.mkdir(destinationDir, function(err, result) {
     if (err) {
       return cb('destination Provider mkDir error');
     }
@@ -142,25 +143,45 @@ FoldersSyncUnion.prototype.sync = function(cb) {
           return cb('cp file error,' + syncList[fileCounter].path, null);
         }
 
-        syncResult.push(syncList[fileCounter].uri + ' ==> ' + destinationDir + syncList[fileCounter].name);
+        syncResult.push(self.source.module + ':/' + syncList[fileCounter].uri + ' ==> ' + self.destination.module
+            + ':/' + destinationDir + syncList[fileCounter].name);
         fileCounter++;
 
         if (fileCounter < syncList.length) {
           console.log('sync #' + (fileCounter + 1) + ' file, ', syncList[fileCounter].name);
-          union.cp(syncList[fileCounter].uri, destinationDir + syncList[fileCounter].name, function(err, result) {
-          });
+          self.cp(syncList[fileCounter].uri, destinationDir + syncList[fileCounter].name, cpFileCb);
         } else {
           console.log('sync finished, sync ' + syncList.length + ' file(s) in total');
           cb(null, syncResult); // copy finished
         }
       }
       console.log('sync #' + (fileCounter + 1) + ' file, ', syncList[fileCounter].name);
-      union.cp(syncList[fileCounter].uri, destinationDir + syncList[fileCounter].name, cpFileCb);
+      self.cp(syncList[fileCounter].uri, destinationDir + syncList[fileCounter].name, cpFileCb);
 
     });
   });
 
 }
+
+// cp single file from source to destination
+FoldersSyncUnion.prototype.cp = function(sourceUri, destinationUri, cb) {
+  var self = this;
+
+  self.source.provider.cat(sourceUri, function(err, source_r) {
+    if (err) {
+      console.log("error occured in union cp(), reading source error, ", err);
+      return cb(err);
+    }
+    var file = source_r.stream;
+    self.destination.provider.write(destinationUri, file, function(err) {
+      if (err) {
+        console.log("error occured in union cp(), writing to destination err, ", err);
+        return cb(err);
+      }
+      cb(null, 'cp success');
+    });
+  });
+};
 
 /**
  * Ls the files in Sync Union
@@ -170,8 +191,8 @@ FoldersSyncUnion.prototype.sync = function(cb) {
 FoldersSyncUnion.prototype.ls = function(cb) {
   var union = this.union;
   var self = this;
-  var sourcePath = this.sourceDir;
-  var destinationPath = this.destinationDir;
+  var sourcePath = this.source.dir;
+  var destinationPath = this.destination.dir;
   var options = this.options;
 
   self.compareFolder(sourcePath, destinationPath, options, function(err, result) {
@@ -220,6 +241,49 @@ var match = function(fileName, pattern) {
   return false;
 }
 
+// Recursively list subdirectories encountered.
+FoldersSyncUnion.prototype.lsR = function(provider, uri, filter, cb) {
+
+  var self = this;
+  var folders = [];
+
+  var done = function(err) {
+    if (err)
+      return cb(err);
+    cb(null, folders);
+  }
+
+  provider.ls(uri, function(err, data) {
+    if (err)
+      return cb(err);
+
+    var i = -1;
+
+    // FIXME May want to concurrently async ls sub-folders
+    (function next() {
+      i++;
+      if (i >= data.length)
+        return done(null, folders);
+
+      // depth first walk method, if encountered dir, Recursively list subdirectories
+      if (data[i].extension == '+folder') {
+        self.lsR(provider, data[i].fullPath, filter, function(err, subFolders) {
+          if (err)
+            return done(err);
+          folders = folders.concat(subFolders);
+          next();
+        });
+      } else {
+        // if it's file, filter by file name
+        if (match(data[i].name, filter)) {
+          folders.push(data[i]);
+          next();
+        }
+      }
+    })();
+  });
+}
+
 /**
  * Compare folder. Compare all files in folders.
  * 
@@ -236,22 +300,26 @@ var match = function(fileName, pattern) {
 FoldersSyncUnion.prototype.compareFolder = function(sourcePath, destinationPath, options, cb) {
   var union = this.union;
   var self = this;
+  var sourcePath = this.source.dir;
+  var destinationPath = this.destination.dir;
 
   // FIXME, may ls the source/destination concurrently.
-  union.ls(sourcePath, function(error, source) {
+  self.lsR(self.source.provider, sourcePath, options.filter, function(error, source) {
+    // union.ls(sourcePath, function(error, source) {
     if (error) {
       return cb('ls source path error,' + error, null);
     }
 
-    union.ls(destinationPath, function(err, destination) {
+    self.lsR(self.destination.provider, destinationPath, options.filter, function(error, destination) {
+      // union.ls(destinationPath, function(err, destination) {
       if (error) {
         return cb('ls destination path error,' + error, null);
       }
 
-      if (options.filter) {
-        source = self.projection(source, options.filter);
-        destination = self.projection(destination, options.filter);
-      }
+      // if (options.filter) {
+      // source = self.projection(source, options.filter);
+      // destination = self.projection(destination, options.filter);
+      // }
 
       if (!options.logic)
         cb(null, foldersSubtraction(source, destination, options));
@@ -321,6 +389,6 @@ var normalizeDirPath = function(module, dir) {
     dir = dir + '/';
   if (dir[0] != '/')
     dir = '/' + dir;
-  dir = '/' + module + dir;
+  // dir = '/' + module + dir;
   return dir;
 }
