@@ -176,6 +176,8 @@ we support custom LS Handler, Options.logicHandler.
 
 - sync: will sync the files only in source folders to destination folders.
 
+- scheduleSync: crontab sync.
+
 setup a sync Union file system.
 
 ```js
@@ -250,4 +252,10 @@ syncUnion.sync(function(err, result) {
   }
   console.log('union sync success, ', result);
 });
+```
+
+Crontab sync
+```js
+// crontab Example, execute sycn every minute.
+var jobId = syncUnion.scheduleSync("*/1 * * * *");
 ```
