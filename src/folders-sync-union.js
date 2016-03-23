@@ -132,6 +132,7 @@ FoldersSyncUnion.prototype.sync = function(cb) {
       }
 
       if (syncList.length <= 0) {
+        console.log('file list is same, no file need to sync');
         return cb(null, syncList);
       }
 
@@ -278,10 +279,11 @@ FoldersSyncUnion.prototype.lsR = function(provider, uri, filter, cb) {
         });
       } else {
         // if it's file, filter by file name
-        if (match(data[i].name, filter)) {
+        if (!filter || match(data[i].name, filter)) {
           folders.push(data[i]);
-          next();
         }
+        next();
+
       }
     })();
   });
@@ -318,7 +320,6 @@ FoldersSyncUnion.prototype.compareFolder = function(sourcePath, destinationPath,
       if (error) {
         return cb('ls destination path error,' + error, null);
       }
-
       // if (options.filter) {
       // source = self.projection(source, options.filter);
       // destination = self.projection(destination, options.filter);
@@ -378,6 +379,7 @@ FoldersSyncUnion.prototype.foldersSubtraction = function(sourcePath, source, des
  */
 // FIXME may also use other metadata options (eg, date..) to compare
 FoldersSyncUnion.prototype.compareFile = function(sourcePath, source, destinationPath, destination, options) {
+
   var ignoreCase = options.ignoreCase || false;
   var compareSize = options.compareSize || false;
   var ignoreDirPath = options.ignoreDirPath || false;
@@ -419,7 +421,7 @@ var getRelativePath = function(fullPath, basePath) {
   return fullPath.substr(idx + basePath.length);
 }
 
-var normalizeDirPath = function(module, dir) {
+var normalizeDirPath = function(dir) {
   if (!dir || dir == '')
     dir = '/';
   if (dir[dir.length - 1] != '/')
@@ -428,4 +430,5 @@ var normalizeDirPath = function(module, dir) {
     dir = '/' + dir;
   // dir = '/' + module + dir;
   return dir;
+
 }
