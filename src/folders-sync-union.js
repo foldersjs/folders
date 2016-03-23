@@ -325,10 +325,10 @@ FoldersSyncUnion.prototype.compareFolder = function(sourcePath, destinationPath,
       // destination = self.projection(destination, options.filter);
       // }
 
-      if (!options.logic)
+      if (!options.logicHandler)
         cb(null, self.foldersSubtraction(sourcePath, source, destinationPath, destination, options));
       else if (typeof (options.logic) == 'function')
-        cb(null, options.logic(source, destination, options));
+        cb(null, options.logicHandler(source, destination, options));
       else
         cb('error logic handler, not a function.');
 

@@ -171,8 +171,10 @@ Sync Union Folders API
 A special Union Folders with two mounts, A source folders and destination folders.
 
 Support ls,sync feature.
-ls: will compare two child systems and show the files only in source folders.
-sync: will sync the files only in source folders to destination folders.
+- ls: will compare two child systems and show the files only in source folders.
+we support custom LS Handler, Options.logicHandler.
+
+- sync: will sync the files only in source folders to destination folders.
 
 setup a sync Union file system.
 
@@ -182,26 +184,34 @@ var FoldersSyncUnion = function(mounts, options, prefix){...};
 
 - param mounts, the source/dest provider informations.
 ```js
-//example to sync file from root of STUB to root of HDSF folders
-{
-  // the source information
+//example to sync file from /S3/us-east-1/foldersio to root of HDSF folders
+var awsConfig = {
+  "accessKeyId" : "=== AWS KEY ===",
+  "secretAccessKey" : "=== AWS ACCESS KEY ===",
+  "service" : "S3",
+  "region" : "us-east-1",
+  "bucket" : "foldersio",
+  "partSize" : 10485760,
+  "queueSize" : 5
+};
+
+var hdfsConfig = {
+  baseurl : "=== WEBHDFS URL ===",
+  username : 'hdfs'
+};
+
+var mounts = {
   source : {
-    module : 'stub',
-    opts : null,
-    dir : '/'
+    module : 'aws',
+    opts : awsConfig,
+    dir : '/S3/us-east-1/foldersio'
   },
-  // the destination information
   destination : {
-    module : 'hdfs', // module name
-    // options for init module
-    opts : {
-      baseurl : 'webhdfs-url',
-      username : 'webhdfs-username'
-    },
-    // the dir used to sync file
+    module : 'hdfs',
+    opts : hdfsConfig,
     dir : '/'
   }
-}
+};
 ```
 
 - param options, Sync Options:
@@ -212,16 +222,32 @@ var FoldersSyncUnion = function(mounts, options, prefix){...};
   filter : '*.txt',
 
   // if Ignore case of file name when compare file
-  ignoreCase : true,
+  ignoreCase : false,
 
   // if Compare size when compare file
-  compareSize : true
+  compareSize : false,
+  
+  // if compare the whole relative file path (include dir path) or just the file name
+  ignoreDirPath : false 
 
   // TODO: Thread number used for copy file.
   threadNum : 5,
 
-  // TODO: Compare logic handler, may support different custom logic functions for LS/Cat ...
+  // Compare logic handler, may support different custom logic functions for LS/Cat ...
   // by default, we do subtraction which meaning only show the file in source but not in dest.
   logicHandler: resultFolders = function(sourceFolders, destFolders, options);
 }
+```
+
+Call the Sync method
+```js
+var Fio = require('../src/api');
+var SyncUnion = Fio.syncUnion();
+var syncUnion = new SyncUnion(mounts, syncOptions);
+syncUnion.sync(function(err, result) {
+  if (err) {
+    return console.log('union sync error: ', err);
+  }
+  console.log('union sync success, ', result);
+});
 ```
