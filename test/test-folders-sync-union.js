@@ -26,6 +26,143 @@ var syncOptions = {
 
 var syncUnionFS = new SyncUnionFio(mounts, syncOptions);
 
+// test compare file, with compareSize, ignoreCase, ignoreDirPath options.
+var testSyncCompareFile = function() {
+  var testCompareFile = function(sourcePath, folder1, destinationPath, folder2, option) {
+    console.log(folder1);
+    console.log(folder2);
+    console.log(option);
+    console.log(syncUnionFS.compareFile(sourcePath, folder1, destinationPath, folder2, option));
+    console.log();
+  }
+
+  // test compareSize
+  var folder1 = {
+    name : '1.txt',
+    fullPath : '/1.txt',
+    size : 436
+  };
+  var folder2 = {
+    name : '1.txt',
+    fullPath : '/1.txt',
+    size : 437
+  };
+  var option = {
+    ignoreCase : true,
+    compareSize : true,
+    ignoreDirPath : true
+  };
+  testCompareFile('/', folder1, '/', folder2, option);
+
+  folder1 = {
+    name : '1.txt',
+    fullPath : '/1.txt',
+    size : 436
+  };
+  folder2 = {
+    name : '1.txt',
+    fullPath : '/1.txt',
+    size : 437
+  };
+  option = {
+    ignoreCase : true,
+    compareSize : false,
+    ignoreDirPath : true
+  };
+  testCompareFile('/', folder1, '/', folder2, option);
+
+  // test ignoreCase
+  folder1 = {
+    name : 'copy.txt',
+    fullPath : '/copy.txt',
+    size : 436
+  };
+  folder2 = {
+    name : 'COPY.txt',
+    fullPath : '/COPY.txt',
+    size : 436
+  };
+  option = {
+    ignoreCase : true,
+    compareSize : true,
+    ignoreDirPath : true
+  };
+  testCompareFile('/', folder1, '/', folder2, option);
+
+  folder1 = {
+    name : 'copy.txt',
+    fullPath : '/copy.txt',
+    size : 436
+  };
+  folder2 = {
+    name : 'COPY.txt',
+    fullPath : '/COPY.txt',
+    size : 436
+  };
+  option = {
+    ignoreCase : false,
+    compareSize : true,
+    ignoreDirPath : true
+  };
+  testCompareFile('/', folder1, '/', folder2, option);
+
+  // Test files in sub-folder, ignoreDirPath=false
+  folder1 = {
+    name : 'copy.txt',
+    fullPath : '/source/folder1/copy.txt',
+    size : 436
+  };
+  folder2 = {
+    name : 'copy.txt',
+    fullPath : '/destination/folder2/subfolder/copy.txt',
+    size : 436
+  };
+  option = {
+    ignoreCase : true,
+    compareSize : true,
+    ignoreDirPath : false
+  };
+  // Expected false, because they are in different relative path.
+  testCompareFile('source/folder1', folder1, '/destination/folder2/', folder2, option);
+
+  // Test files in sub-folder, ignoreDirPath=true
+  folder1 = {
+    name : 'copy.txt',
+    fullPath : '/source/folder1/copy.txt',
+    size : 436
+  };
+  folder2 = {
+    name : 'copy.txt',
+    fullPath : '/destination/folder2/subfolder/copy.txt',
+    size : 436
+  };
+  option = {
+    ignoreCase : true,
+    compareSize : true,
+    ignoreDirPath : true
+  };
+  // Expected true, because they are in different relative path, but ignoreDirPath=true
+  testCompareFile('source/folder1', folder1, '/destination/folder2/', folder2, option);
+
+  folder1 = {
+    name : 'copy.txt',
+    fullPath : '/source/folder1/subfolder/copy.txt',
+    size : 436
+  };
+  folder2 = {
+    name : 'copy.txt',
+    fullPath : '/destination/folder2/subfolder/copy.txt',
+    size : 436
+  };
+  option = {
+    ignoreCase : true,
+    compareSize : true,
+    ignoreDirPath : false
+  };
+  // Expected true,
+  testCompareFile('/source/folder1/', folder1, '/destination/folder2/', folder2, option);
+}
+
 // a test case sync the *.txt file in the root of STUB folder to root of Memory folder.
 syncUnionFS.ls(function(err, result) {
   if (err) {

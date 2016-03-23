@@ -52,7 +52,7 @@ var fio = new Fio();
  *   compareSize : false
  *  
  *   // when Compare files in subfolders (sub dir), we compare the full path include the dir or just the file name
- *   ignoreDirPath: true;
+ *   ignoreDirPath: false;
  * 
  *   // TODO: Thread number used for copy file.
  *   threadNum : 5,
@@ -380,7 +380,7 @@ FoldersSyncUnion.prototype.foldersSubtraction = function(sourcePath, source, des
 FoldersSyncUnion.prototype.compareFile = function(sourcePath, source, destinationPath, destination, options) {
   var ignoreCase = options.ignoreCase || false;
   var compareSize = options.compareSize || false;
-  var ignoreDirPath = options.ignoreDirPath || true;
+  var ignoreDirPath = options.ignoreDirPath || false;
 
   if (compareSize) {
     if (source.size != destination.size)
