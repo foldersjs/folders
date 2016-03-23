@@ -65,4 +65,8 @@ var testLs = function() {
     console.log('union sync success, ', result);
   });
 };
+
 setTimeout(testSync, 100);
+
+// crontab Example, execute sycn every minute.
+// syncUnion.scheduleSync("*/1 * * * *");

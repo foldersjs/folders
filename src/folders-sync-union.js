@@ -1,5 +1,6 @@
 var minimatch = require('minimatch');
 var util = require('util');
+var crontab = require('node-crontab');
 var Union = require('./union');
 var Fio = require('./api');
 
@@ -93,6 +94,32 @@ var FoldersSyncUnion = function(mounts, options, prefix) {
 
 module.exports = FoldersSyncUnion;
 
+FoldersSyncUnion.prototype.scheduleSync = function(cronTime) {
+  var self = this;
+
+  var jobId = crontab.scheduleJob(cronTime, function() {
+    var self = this;
+    console.log('begin to execute sync job, ' + self.source.module + ':/' + self.source.dir + ' ==> '
+        + self.destination.module + ':/' + self.destination.dir);
+    this.sync(function(err, result) {
+      if (err) {
+        console.log('sync job execute error, ' + self.source.module + ':/' + self.source.dir + ' ==> '
+            + self.destination.module + ':/' + self.destination.dir + '\n');
+        console.log(err);
+      } else {
+        console.log('sync job execute success, ' + self.source.module + ':/' + self.source.dir + ' ==> '
+            + self.destination.module + ':/' + self.destination.dir + '\n');
+      }
+    });
+  }, null, self);
+
+  return jobId;
+}
+
+FoldersSyncUnion.prototype.cancelSync = function() {
+  return crontab.cancelJob(jobId);
+}
+
 /**
  * Sync files from source dir path to destination dir Path
  * 
@@ -117,13 +144,14 @@ FoldersSyncUnion.prototype.sync = function(cb) {
     return cb('destination Provider do not support mkDir feature');
   }
 
+  console.log('destination Provider mkDir starting...,', destinationDir);
   self.destination.provider.mkdir(destinationDir, function(err, result) {
     if (err) {
       return cb('destination Provider mkDir error');
     }
 
     console.log('destination Provider mkDir successful,', destinationDir);
-
+    console.log('comparing source/destination Folder...,');
     // filter the folders by option.filter, only looks at file names that match a pattern
     // Compare the source folder and destination folder by name ( may and size)
     self.compareFolder(sourcePath, destinationPath, options, function(err, syncList) {
@@ -135,31 +163,36 @@ FoldersSyncUnion.prototype.sync = function(cb) {
         console.log('file list is same, no file need to sync');
         return cb(null, syncList);
       }
+      console.log('compare source/destination Folder finished, ' + syncList.length + ' files to sync');
 
       // Copy the Files in syncList, from source to dest.
       // FIXME, need to support copy files concurrently using multi-thread, threadNum to set number of maximum
       // concurrent transfer threads.
       var fileCounter = 0; // syncList.length;
       var syncResult = [];
+      var syncInfo;
       var cpFileCb = function(err, result) {
 
         if (err) {
           return cb('cp file error,' + syncList[fileCounter].path, null);
         }
 
-        syncResult.push(self.source.module + ':/' + syncList[fileCounter].uri + ' ==> ' + self.destination.module
-            + ':/' + destinationDir + syncList[fileCounter].name);
+        syncResult.push(syncInfo);
         fileCounter++;
 
         if (fileCounter < syncList.length) {
-          console.log('sync #' + (fileCounter + 1) + ' file, ', syncList[fileCounter].name);
+          syncInfo = self.source.module + ':/' + syncList[fileCounter].uri + ' ==> ' + self.destination.module + ':/'
+              + destinationDir + syncList[fileCounter].name;
+          console.log('sync #' + (fileCounter + 1) + '/' + syncList.length + ' file, ', syncInfo);
           self.cp(syncList[fileCounter].uri, destinationDir + syncList[fileCounter].name, cpFileCb);
         } else {
           console.log('sync finished, sync ' + syncList.length + ' file(s) in total');
           cb(null, syncResult); // copy finished
         }
       }
-      console.log('sync #' + (fileCounter + 1) + ' file, ', syncList[fileCounter].name);
+      syncInfo = self.source.module + ':/' + syncList[fileCounter].uri + ' ==> ' + self.destination.module + ':/'
+          + destinationDir + syncList[fileCounter].name;
+      console.log('sync #' + (fileCounter + 1) + '/' + syncList.length + ' file, ', syncInfo);
       self.cp(syncList[fileCounter].uri, destinationDir + syncList[fileCounter].name, cpFileCb);
 
     });
