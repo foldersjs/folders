@@ -4,6 +4,8 @@
 // "folders-hdfs": "git://github.com/foldersjs/folders-hdfs.git#master"
 
 var Fio = require('../src/api');
+// if test out of folders module, first npm install folders.
+// var Fio = require('folders');
 var SyncUnion = Fio.syncUnion();
 
 var awsConfig = {
@@ -35,17 +37,30 @@ var mounts = {
 };
 
 var syncOptions = {
-  concurrency : 3,
+  concurrency : 2,
   filter : '*.txt',
   ignoreCase : true, // ignore case when compare the file name.
   compareSize : true, // need to compare file size
-  ignoreDirPath : false // need to compare the whole relative path (include dir path)
+  // need to compare the whole relative path (include dir path)
+  ignoreDirPath : false
+
 };
 
 var syncUnion = new SyncUnion(mounts, syncOptions);
 
-var testSync = function() {
+// A Example show call the LS method
+var testLs = function() {
+  syncUnion.ls(function(err, result) {
+    if (err) {
+      return console.log('union sync error: ', err);
+    }
 
+    console.log('union ls success, ', result);
+  });
+};
+
+// A Example show call the sync method
+var testSync = function() {
   syncUnion.sync(function(err, result) {
     if (err) {
       return console.log('union sync error: ', err);
@@ -53,20 +68,14 @@ var testSync = function() {
 
     console.log('union sync success, ', result);
   });
-};
+}
 
-var testLs = function() {
+// A Example show crontab execute every minute
+var testScheduleSync = function() {
+  syncUnion.scheduleSync("*/1 * * * *");
+}
 
-  syncUnion.ls(function(err, result) {
-    if (err) {
-      return console.log('union sync error: ', err);
-    }
+// testLs();
+testSync();
+// testScheduleSync();
 
-    console.log('union sync success, ', result);
-  });
-};
-
-setTimeout(testSync, 100);
-
-// crontab Example, execute sycn every minute.
-// syncUnion.scheduleSync("*/1 * * * *");

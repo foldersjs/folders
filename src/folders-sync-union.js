@@ -180,7 +180,7 @@ var syncFiles = function(self, syncList, destinationDir, concurrency, cb) {
   var sourcePath = self.source.dir;
   var destinationPath = self.destination.dir;
 
-  console.log('begin to sync files...');
+  console.log('begin to sync files, concurrency:' + concurrency);
   var syncResult = [];
   var cpFileTasker = function(fileIdx, callback) {
 
@@ -193,8 +193,8 @@ var syncFiles = function(self, syncList, destinationDir, concurrency, cb) {
     self.cp(file.uri, destinationDir + file.name, function(err, result) {
       if (err) {
         console.log('sync #' + (fileIdx + 1) + '/' + syncList.length + ' file error ', err);
-      }else{
-        console.log('sync #' + (fileIdx + 1) + '/' + syncList.length + ' file finished');  
+      } else {
+        console.log('sync #' + (fileIdx + 1) + '/' + syncList.length + ' file finished');
         syncResult.push(syncInfo);
       }
       callback(err);
