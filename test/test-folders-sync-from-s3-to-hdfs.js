@@ -35,7 +35,7 @@ var mounts = {
 };
 
 var syncOptions = {
-  // threadNum : 5,
+  concurrency : 3,
   filter : '*.txt',
   ignoreCase : true, // ignore case when compare the file name.
   compareSize : true, // need to compare file size

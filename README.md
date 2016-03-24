@@ -232,8 +232,8 @@ var mounts = {
   // if compare the whole relative file path (include dir path) or just the file name
   ignoreDirPath : false 
 
-  // TODO: Thread number used for copy file.
-  threadNum : 5,
+  // number of maximum concurrent transfer threads, copy file.
+  concurrency : 5,
 
   // Compare logic handler, may support different custom logic functions for LS/Cat ...
   // by default, we do subtraction which meaning only show the file in source but not in dest.

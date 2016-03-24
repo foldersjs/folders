@@ -1,6 +1,7 @@
 var minimatch = require('minimatch');
 var util = require('util');
 var crontab = require('node-crontab');
+var async = require('async');
 var Union = require('./union');
 var Fio = require('./api');
 
@@ -55,8 +56,8 @@ var fio = new Fio();
  *   // when Compare files in subfolders (sub dir), we compare the full path include the dir or just the file name
  *   ignoreDirPath: false;
  * 
- *   // TODO: Thread number used for copy file.
- *   threadNum : 5,
+ *   // number of maximum concurrent transfer threads, copy file.
+ *   concurrency : 5,
  * 
  *   // TODO: Compare logic handler, may support different custom logic functions for LS/Cat ...
  *   // by default, we do subtraction which meaning only show the file in source but not in dest.
@@ -165,39 +166,63 @@ FoldersSyncUnion.prototype.sync = function(cb) {
       }
       console.log('compare source/destination Folder finished, ' + syncList.length + ' files to sync');
 
-      // Copy the Files in syncList, from source to dest.
-      // FIXME, need to support copy files concurrently using multi-thread, threadNum to set number of maximum
-      // concurrent transfer threads.
-      var fileCounter = 0; // syncList.length;
-      var syncResult = [];
-      var syncInfo;
-      var cpFileCb = function(err, result) {
-
-        if (err) {
-          return cb('cp file error,' + syncList[fileCounter].path, null);
-        }
-
-        syncResult.push(syncInfo);
-        fileCounter++;
-
-        if (fileCounter < syncList.length) {
-          syncInfo = self.source.module + ':/' + syncList[fileCounter].uri + ' ==> ' + self.destination.module + ':/'
-              + destinationDir + syncList[fileCounter].name;
-          console.log('sync #' + (fileCounter + 1) + '/' + syncList.length + ' file, ', syncInfo);
-          self.cp(syncList[fileCounter].uri, destinationDir + syncList[fileCounter].name, cpFileCb);
-        } else {
-          console.log('sync finished, sync ' + syncList.length + ' file(s) in total');
-          cb(null, syncResult); // copy finished
-        }
+      if (!options.concurrency || options.concurrency < 1) {
+        options.concurrency = 1;
       }
-      syncInfo = self.source.module + ':/' + syncList[fileCounter].uri + ' ==> ' + self.destination.module + ':/'
-          + destinationDir + syncList[fileCounter].name;
-      console.log('sync #' + (fileCounter + 1) + '/' + syncList.length + ' file, ', syncInfo);
-      self.cp(syncList[fileCounter].uri, destinationDir + syncList[fileCounter].name, cpFileCb);
 
+      syncFiles(self, syncList, destinationDir, options.concurrency, cb);
     });
   });
+}
 
+var syncFiles = function(self, syncList, destinationDir, concurrency, cb) {
+
+  var sourcePath = self.source.dir;
+  var destinationPath = self.destination.dir;
+
+  console.log('begin to sync files...');
+  var syncResult = [];
+  var cpFileTasker = function(fileIdx, callback) {
+
+    var file = syncList[fileIdx];
+
+    var syncInfo = self.source.module + ':/' + file.uri + ' ==> ' + self.destination.module + ':/' + destinationDir
+        + file.name;
+    console.log('sync #' + (fileIdx + 1) + '/' + syncList.length + ' file... ', syncInfo);
+
+    self.cp(file.uri, destinationDir + file.name, function(err, result) {
+      if (err) {
+        console.log('sync #' + (fileIdx + 1) + '/' + syncList.length + ' file error ', err);
+      }else{
+        console.log('sync #' + (fileIdx + 1) + '/' + syncList.length + ' file finished');  
+        syncResult.push(syncInfo);
+      }
+      callback(err);
+    });
+  }
+
+  var q = async.queue(cpFileTasker, concurrency);
+
+  // finished callback.
+  q.drain = function() {
+    console.log('sync finished, sync ' + syncList.length + ' file(s) in total');
+    cb(null, syncResult); // copy finished
+  }
+
+  var cpErrorHandler = function(err) {
+    if (err) {
+      // error handle, if failed in single file.
+      // just removes the drain callback and empties remaining tasks from the queue forcing it to go idle.
+      console.log('sync file error, ', err);
+      q.kill();
+      cb(err);
+    }
+  }
+
+  // push all the files in sync list.
+  for (var i = 0; i < syncList.length; i++) {
+    q.push(i, cpErrorHandler);
+  }
 }
 
 // cp single file from source to destination
