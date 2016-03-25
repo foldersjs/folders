@@ -167,7 +167,7 @@ FoldersSyncUnion.prototype.sync = function(cb) {
       console.log('compare source/destination Folder finished, ' + syncList.length + ' files to sync');
 
       if (!options.concurrency || options.concurrency < 1) {
-        options.concurrency = 1;
+        options.concurrency = syncList.length;
       }
 
       syncFiles(self, syncList, destinationDir, options.concurrency, cb);
