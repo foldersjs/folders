@@ -7,29 +7,29 @@
 import { Readable } from 'stream';
 
 class UnionFio {
-    constructor(fio, mounts, opts, prefix) {
+    constructor(fio, prefix) {
         this.fio = fio;
         this.prefix = prefix || "/http_folders.io_0:union/";
         this.fuse = {};
-        this.setup(opts, mounts || []);
     }
 
-    setup(opts, mounts) {
-        const self = this;
+    static async create(fio, mounts, opts, prefix) {
+        const union = new UnionFio(fio, prefix);
         for (let i = 0; i < mounts.length; ++i) {
             const mount = mounts[i];
             for (const name in mount) {
                 if (mount.hasOwnProperty(name)) {
-                    if (!self.fuse[name]) {
+                    if (!union.fuse[name]) {
                         const provider = name;
-                        const o = mount[name].create(self.prefix);
-                        self.fuse[provider] = o;
+                        const o = await mount[name].create(union.prefix);
+                        union.fuse[provider] = o;
                     } else {
                         console.log("union setup: Error! " + name + " already mounted");
                     }
                 }
             }
         }
+        return union;
     }
 
     asView(path, viewfs) {

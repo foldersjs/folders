@@ -125,7 +125,7 @@ class LocalFio {
             o.uri = "#" + this.prefix + o.fullPath;
             o.size = 0;
             o.extension = path.extname(o.name).substr(1, path.extname(o.name).length - 1) || '+folder';
-            o.type = (o.extension == '+folder' ? "" : mime.lookup(o.extension));
+            o.type = (o.extension == '+folder' ? "" : mime.getType(o.extension));
             o.modificationTime = +new Date();
             out.push(o);
         }

@@ -47,7 +47,7 @@ class Stats {
 }
 
 const folder_attr = {
-    mode: 0755 | constants.S_IFDIR,
+    mode: parseInt('0755', 8) | constants.S_IFDIR,
     size: 10 * 1024,
     uid: 9001,
     gid: 9001,

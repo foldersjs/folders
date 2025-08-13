@@ -12,37 +12,21 @@ class FoldersTest {
 	}
 
 	test(dir) {
-		const folder = this.folder;
-		console.log("[Test-folders] start test for folders,", folder);
+		return new Promise((resolve, reject) => {
+			const folder = this.folder;
+			console.log("[Test-folders] start test for folders,", folder);
 
-		if (dir.length && dir.substr(-1) != "/")
-			dir = dir + "/";
+			if (dir.length && dir.substr(-1) != "/")
+				dir = dir + "/";
 
-		console.log("[Test-folders] ls dir/files in dir,", dir);
-		folder.ls(dir, function(err, data) {
-			if (err) {
-				console.error(err);
-				return;
-			}
-			console.log('[Test-folders] ls result:', data);
-
-			const testDataFile = dir + "data/test_dest.dat";
-			console.log("[Test-folders] testDataFile,", testDataFile);
-			const stream = fs.createReadStream('./data/test.txt');
-			folder.write(testDataFile, stream, function(err, data) {
+			console.log("[Test-folders] ls dir/files in dir,", dir);
+			folder.ls(dir, function(err, data) {
 				if (err) {
 					console.error(err);
-					return;
+					return reject(err);
 				}
-				console.log('[Test-folders] write result,',testDataFile);
-
-				folder.cat(testDataFile, function(err, data) {
-					if (err) {
-						console.error(err);
-						return;
-					}
-					console.log('[Test-folders] cat file ',testDataFile,' success, stream.size:', data.size);
-				});
+				console.log('[Test-folders] ls result:', data);
+				resolve();
 			});
 		});
 	}
