@@ -1,0 +1,25 @@
+{
+  "name": "@folders/core",
+  "version": "0.0.7",
+  "type": "module",
+  "description": "Synthetic file system for your local and remote servers",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/foldersjs/folders.git"
+  },
+  "author": "",
+  "license": "(Apache-2.0 OR MIT)",
+  "bugs": {
+    "url": "https://github.com/foldersjs/folders/issues"
+  },
+  "main": "./src/api.js",
+  "homepage": "https://github.com/foldersjs/folders",
+  "dependencies": {
+    "async": "^3.2.4",
+    "json-stringify-safe": "^5.0.1",
+    "mime": "^4.0.7",
+    "minimatch": "^10.0.3",
+    "node-cron": "^4.2.1",
+    "tweetnacl": "^1.0.3"
+  }
+}

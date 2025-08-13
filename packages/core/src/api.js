@@ -18,7 +18,6 @@ import union from './union.js';
 import syncUnion from './folders-sync-union.js';
 import stub from './folders-stub.js';
 import local from './folders-local.js';
-import domain from 'domain';
 
 let route = {};
 const registry = {};
@@ -35,12 +34,7 @@ class Fio {
 		this.DEBUG = true;
 
 		if(asDebug === true) {
-			// domain is used in debug mode to catch errors instead of exiting.
-			const d = domain.create();
-			d.on('error', function(er) {
-				console.error('uncaughtException: ' + er.message);
-				console.error('error', er.stack);
-			});
+			// domain was used in debug mode to catch errors instead of exiting, but it is deprecated.
 		}
 	}
 
@@ -289,7 +283,7 @@ class Fio {
 		return options;
 	}
 
-	handshake(serviceKey, cb) {
+	async handshake(serviceKey) {
 		const alice = Handshake.createKeypair(); //keypair of client
 		this.alice = alice; //generete session
 
@@ -313,15 +307,18 @@ class Fio {
 			body: this.handshake
 		};
 
-		route.request(options)
-			.on('response', function(response) {
-				console.log('handshake OK');
-				cb();
-			})
-			.on('error', function(err) {
-				console.log('handshake Error!');
-			})
-			.pipe(process.stdout);
+		return new Promise((resolve, reject) => {
+			route.request(options)
+				.on('response', (response) => {
+					console.log('handshake OK');
+					resolve();
+				})
+				.on('error', (err) => {
+					console.log('handshake Error!');
+					reject(err);
+				})
+				.pipe(process.stdout);
+		});
 	}
 
 	postSigned(path, data) {
