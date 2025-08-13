@@ -8,8 +8,7 @@
  *
  */
 
-import nacl from './lib/nacl-fast.min.js';
-import qs from 'querystring';
+import nacl from 'tweetnacl';
 import url from 'url';
 
 const pair = function(prefix, fn) {
@@ -100,10 +99,9 @@ class HandshakeService {
 		console.log("nodeId & input.length: ", nodeId, input.length);
 		console.log('input: ', input);
 		if(input.length == 96) {
-			const verifier =  input.substr(0, 32);
-			console.log('verifier: ', verifier);
+			const verifier = stringify(input.slice(0, 32));
 			if (verifier!=nodeId) return false;
-			const sessionKey = decodeHexString(input.substr(32, 64));
+			const sessionKey = input.slice(32, 96);
 			console.log('sessionKey: ', sessionKey);
 			if (typeof(this.session[nodeId]) == 'undefined')
 				this.session[nodeId] = [];
@@ -111,10 +109,10 @@ class HandshakeService {
 		}
 		else if(input.length == 104) {
 			console.log('extended handshake');
-			const nonce = input.subarray(32, 32+24);
-			const token = input.subarray(56, 104);
-			input = input.subarray(0,32);
-			const sessionKey = nacl.box.open(token, nonce, input, this.bob.secretKey);
+			const nonce = input.slice(32, 32+24);
+			const token = input.slice(56, 104);
+			const publicKey = input.slice(0,32);
+			const sessionKey = nacl.box.open(token, nonce, publicKey, this.bob.secretKey);
 			if (!sessionKey) {
 				console.log('invalid service key');
 				return false;

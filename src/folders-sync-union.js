@@ -1,11 +1,9 @@
-import minimatch from 'minimatch';
+import * as minimatch from 'minimatch';
 import util from 'util';
 import cron from 'node-cron';
 import async from 'async';
 import Union from './union.js';
 import Fio from './api.js';
-
-const fio = new Fio();
 
 /**
  * Sync Union Folders constructor
@@ -71,15 +69,19 @@ class FoldersSyncUnion {
   constructor(mounts, options, prefix) {
     prefix = prefix || '/http_folders.io_0:sync-union/';
     this.prefix = prefix;
-
     this.source = mounts.source;
-    this.source.dir = normalizeDirPath(mounts.source.dir);
-    this.source.provider = fio.provider(mounts.source.module, mounts.source.opts).create(prefix);
     this.destination = mounts.destination;
-    this.destination.dir = normalizeDirPath(mounts.destination.dir);
-    this.destination.provider = fio.provider(mounts.destination.module, mounts.destination.opts).create(prefix);
-
     this.options = options || {};
+  }
+
+  static async create(mounts, options, prefix) {
+    const syncUnion = new FoldersSyncUnion(mounts, options, prefix);
+    const fio = new Fio();
+    syncUnion.source.dir = normalizeDirPath(mounts.source.dir);
+    syncUnion.source.provider = await fio.provider(mounts.source.module, mounts.source.opts).create(prefix);
+    syncUnion.destination.dir = normalizeDirPath(mounts.destination.dir);
+    syncUnion.destination.provider = await fio.provider(mounts.destination.module, mounts.destination.opts).create(prefix);
+    return syncUnion;
   }
 
   scheduleSync(cronTime) {
@@ -342,10 +344,10 @@ const syncFiles = function(self, syncList, destinationDir, concurrency, cb) {
 
   const q = async.queue(cpFileTasker, concurrency);
 
-  q.drain = function() {
+  q.drain(() => {
     console.log('sync finished, sync ' + syncList.length + ' file(s) in total');
     cb(null, syncResult);
-  }
+  });
 
   const cpErrorHandler = function(err) {
     if (err) {
@@ -364,7 +366,7 @@ const match = function(fileName, pattern) {
   const patternArray = pattern.split(',');
   for (let i = 0; i < patternArray.length; i++) {
     const pat = patternArray[i];
-    if (minimatch(fileName, pat, {
+    if (minimatch.minimatch(fileName, pat, {
       dot : true
     })) {
       return true;

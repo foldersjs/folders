@@ -20,7 +20,7 @@ import stub from './folders-stub.js';
 import local from './folders-local.js';
 import domain from 'domain';
 
-const route = {};
+let route = {};
 const registry = {};
 
 class Fio {

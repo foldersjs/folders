@@ -1,6 +1,6 @@
 {
   "name": "folders",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "type": "module",
   "description": "Synthetic file system for your local and remote servers",
   "repository": {
@@ -19,16 +19,15 @@
     "json-stringify-safe": "^5.0.1",
     "mime": "^3.0.0",
     "minimatch": "^9.0.3",
-    "node-cron": "^3.0.3"
+    "node-cron": "^3.0.3",
+    "tweetnacl": "^1.0.3"
   },
   "devDependencies": {
-    "c8": "^8.0.1",
-    "eslint": "^8.56.0",
-    "mocha": "^10.2.0"
+    "eslint": "^8.56.0"
   },
   "scripts": {
     "lint": "eslint .",
-    "test": "c8 mocha 'test/**/*.js'"
+    "test": "node --test test/test-native.js"
   },
   "packageManager": "yarn@4.9.2"
 }
