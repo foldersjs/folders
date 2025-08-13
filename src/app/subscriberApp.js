@@ -6,8 +6,8 @@
  *
  */
  
-module.exports = function(o ,channel){
-	var self = o;
+export default function(o ,channel){
+	const self = o;
 	channel.subscribe("DirectoryListRequest", function(data, envelope) {
 		console.log("ready to list it", data);
 		self.provider.onList(data);
@@ -20,10 +20,10 @@ module.exports = function(o ,channel){
 	
 	channel.subscribe("SetFilesRequest", function(data, envelope) {
 		
-		var shareName = Math.random().toString(36).substring(7);
-		var shareId = uuid();
-		var streamId = data.streamId;
-		var SetFilesResponse = {
+		const shareName = Math.random().toString(36).substring(7);
+		const shareId = uuid();
+		const streamId = data.streamId;
+		const SetFilesResponse = {
 			shareId: shareId,
 			shareName: shareName
 		};
@@ -34,5 +34,3 @@ module.exports = function(o ,channel){
 	
 	return;
 }
-
-

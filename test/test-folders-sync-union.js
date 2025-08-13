@@ -1,34 +1,27 @@
-var SyncUnionFio = require('../src/folders-sync-union');
-var FoldersTest = require('./test-folders');
+import SyncUnionFio from '../src/folders-sync-union.js';
+import FoldersTest from './test-folders.js';
 
-var mounts = {
+const mounts = {
   source : {
     module : 'stub',
-    // opts : null,
     dir : '/'
   },
   destination : {
     module : 'memory',
-    // opts : null,
     dir : '/'
   }
-/*
- * destination :{ module: 'hdfs', opts : { baseurl : "http://45.55.223.28/webhdfs/v1/data/", username : 'hdfs' } }
- */
 };
 
-var syncOptions = {
-  // threadNum : 5,
+const syncOptions = {
   filter : '*.txt',
   ignoreCase : true,
   compareSize : true
 };
 
-var syncUnionFS = new SyncUnionFio(mounts, syncOptions);
+const syncUnionFS = new SyncUnionFio(mounts, syncOptions);
 
-// test compare file, with compareSize, ignoreCase, ignoreDirPath options.
-var testSyncCompareFile = function() {
-  var testCompareFile = function(sourcePath, folder1, destinationPath, folder2, option) {
+const testSyncCompareFile = function() {
+  const testCompareFile = function(sourcePath, folder1, destinationPath, folder2, option) {
     console.log(folder1);
     console.log(folder2);
     console.log(option);
@@ -36,18 +29,17 @@ var testSyncCompareFile = function() {
     console.log();
   }
 
-  // test compareSize
-  var folder1 = {
+  let folder1 = {
     name : '1.txt',
     fullPath : '/1.txt',
     size : 436
   };
-  var folder2 = {
+  let folder2 = {
     name : '1.txt',
     fullPath : '/1.txt',
     size : 437
   };
-  var option = {
+  let option = {
     ignoreCase : true,
     compareSize : true,
     ignoreDirPath : true
@@ -71,7 +63,6 @@ var testSyncCompareFile = function() {
   };
   testCompareFile('/', folder1, '/', folder2, option);
 
-  // test ignoreCase
   folder1 = {
     name : 'copy.txt',
     fullPath : '/copy.txt',
@@ -106,7 +97,6 @@ var testSyncCompareFile = function() {
   };
   testCompareFile('/', folder1, '/', folder2, option);
 
-  // Test files in sub-folder, ignoreDirPath=false
   folder1 = {
     name : 'copy.txt',
     fullPath : '/source/folder1/copy.txt',
@@ -122,10 +112,8 @@ var testSyncCompareFile = function() {
     compareSize : true,
     ignoreDirPath : false
   };
-  // Expected false, because they are in different relative path.
   testCompareFile('source/folder1', folder1, '/destination/folder2/', folder2, option);
 
-  // Test files in sub-folder, ignoreDirPath=true
   folder1 = {
     name : 'copy.txt',
     fullPath : '/source/folder1/copy.txt',
@@ -141,7 +129,6 @@ var testSyncCompareFile = function() {
     compareSize : true,
     ignoreDirPath : true
   };
-  // Expected true, because they are in different relative path, but ignoreDirPath=true
   testCompareFile('source/folder1', folder1, '/destination/folder2/', folder2, option);
 
   folder1 = {
@@ -159,11 +146,9 @@ var testSyncCompareFile = function() {
     compareSize : true,
     ignoreDirPath : false
   };
-  // Expected true,
   testCompareFile('/source/folder1/', folder1, '/destination/folder2/', folder2, option);
 }
 
-// a test case sync the *.txt file in the root of STUB folder to root of Memory folder.
 syncUnionFS.ls(function(err, result) {
   if (err) {
     return console.log('ls error: ', err);
@@ -178,8 +163,7 @@ syncUnionFS.ls(function(err, result) {
 
     console.log('union sync success, ', result);
 
-    // temp hack to verify the final files in momory
-    var today = new Date().toISOString().slice(0, 10);
+    const today = new Date().toISOString().slice(0, 10);
     syncUnionFS.destination.provider.ls('/' + today, function(err, files) {
       if (err) {
         return console.log('ls memory root failed,', err);

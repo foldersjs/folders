@@ -5,9 +5,10 @@
  *
  */
  
-var Fio = require('../api');
-var route = require('./route');
-var fio = new Fio(null,null,route);
+import Fio from '../src/api.js';
+import route from './route.js';
+
+const fio = new Fio(null,null,route);
 
 /*
  *
@@ -16,8 +17,8 @@ var fio = new Fio(null,null,route);
  *
  */
  
-isRouteCreated = false;
-gChannel=null;
+let isRouteCreated = false;
+let gChannel=null;
 
 function listen(cb){
 
@@ -42,5 +43,4 @@ function listen(cb){
 
 }
 
-module.exports = listen;
-
+export default listen;

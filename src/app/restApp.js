@@ -5,13 +5,13 @@
  */
 
 
-module.exports = function(conn,requestId,shareid) {
-  var uri = conn.location.pathname;
+export default function(conn,requestId,shareid) {
+  const uri = conn.location.pathname;
 
   if(uri.substr(0,5) === "/dir/") {
-    var shareId = uri.substr(5);
-    var path = "/";
-    var idxPath = shareId.indexOf("/");
+    let shareId = uri.substr(5);
+    let path = "/";
+    const idxPath = shareId.indexOf("/");
     if(idxPath != -1) {
       path = shareId.substr(idxPath);
       shareId = shareId.substr(0,idxPath);
@@ -21,7 +21,7 @@ module.exports = function(conn,requestId,shareid) {
       shareId = shareid;
       
     }
-    var DirectoryListRequest = {
+    const DirectoryListRequest = {
       "type": "DirectoryListRequest",
       "data": {
         "shareId": shareId,
@@ -37,9 +37,9 @@ module.exports = function(conn,requestId,shareid) {
   
   if (uri.substr(0,6) == '/file/'){
     
-    shareId = shareid;
+    let shareId = shareid;
     
-    var FileRequest ={
+    const FileRequest ={
       "type" : "FileRequest",
       "data" :{
        "shareId" :shareId,
@@ -64,7 +64,7 @@ module.exports = function(conn,requestId,shareid) {
 
 // Deprecated methods.
   if(uri === "/set_files") {
-    var SetFilesRequest = {
+    const SetFilesRequest = {
       "type": "SetFilesRequest",
       "streamId" : requestId,
       "data": { 
@@ -80,7 +80,7 @@ module.exports = function(conn,requestId,shareid) {
   }
 
   if (uri === '/get_share'){
-    var x = {
+    const x = {
       "shareId":"testshareid",
       "offline":"0",
       "parent":"0",
