@@ -1,33 +1,18 @@
 {
-  "name": "folders",
-  "version": "0.0.7",
-  "type": "module",
-  "description": "Synthetic file system for your local and remote servers",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/foldersjs/folders.git"
-  },
-  "author": "",
-  "license": "(Apache-2.0 OR MIT)",
-  "bugs": {
-    "url": "https://github.com/foldersjs/folders/issues"
-  },
-  "main": "./src/api.js",
-  "homepage": "https://github.com/foldersjs/folders",
-  "dependencies": {
-    "async": "^3.2.4",
-    "json-stringify-safe": "^5.0.1",
-    "mime": "^3.0.0",
-    "minimatch": "^9.0.3",
-    "node-cron": "^3.0.3",
-    "tweetnacl": "^1.0.3"
+  "name": "folders-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "vitest",
+    "coverage": "vitest run --coverage",
+    "lint": "eslint ."
   },
   "devDependencies": {
-    "eslint": "^8.56.0"
-  },
-  "scripts": {
-    "lint": "eslint .",
-    "test": "node --test test/test-native.js"
-  },
-  "packageManager": "yarn@4.9.2"
+    "@vitest/coverage-v8": "^3.2.4",
+    "eslint": "^9.33.0",
+    "vitest": "^3.2.4"
+  }
 }
