@@ -3,12 +3,11 @@
 // "folders-aws": "git://github.com/foldersjs/folders-aws.git#master",
 // "folders-hdfs": "git://github.com/foldersjs/folders-hdfs.git#master"
 
-var Fio = require('../src/api');
-// if test out of folders module, first npm install folders.
-// var Fio = require('folders');
-var SyncUnion = Fio.syncUnion();
+import Fio from '../src/api.js';
 
-var awsConfig = {
+const SyncUnion = Fio.syncUnion();
+
+const awsConfig = {
   "accessKeyId" : "=== AWS KEY ===",
   "secretAccessKey" : "=== AWS ACCESS KEY ===",
   "service" : "S3",
@@ -18,12 +17,12 @@ var awsConfig = {
   "queueSize" : 5
 };
 
-var hdfsConfig = {
+const hdfsConfig = {
   baseurl : "=== WEBHDFS URL ===",
   username : 'hdfs'
 };
 
-var mounts = {
+const mounts = {
   source : {
     module : 'aws',
     opts : awsConfig,
@@ -36,7 +35,7 @@ var mounts = {
   }
 };
 
-var syncOptions = {
+const syncOptions = {
   concurrency : 2,
   filter : '*.txt',
   ignoreCase : true, // ignore case when compare the file name.
@@ -46,10 +45,9 @@ var syncOptions = {
 
 };
 
-var syncUnion = new SyncUnion(mounts, syncOptions);
+const syncUnion = new SyncUnion(mounts, syncOptions);
 
-// A Example show call the LS method
-var testLs = function() {
+const testLs = function() {
   syncUnion.ls(function(err, result) {
     if (err) {
       return console.log('union sync error: ', err);
@@ -59,8 +57,7 @@ var testLs = function() {
   });
 };
 
-// A Example show call the sync method
-var testSync = function() {
+const testSync = function() {
   syncUnion.sync(function(err, result) {
     if (err) {
       return console.log('union sync error: ', err);
@@ -70,12 +67,10 @@ var testSync = function() {
   });
 }
 
-// A Example show crontab execute every minute
-var testScheduleSync = function() {
+const testScheduleSync = function() {
   syncUnion.scheduleSync("*/1 * * * *");
 }
 
 // testLs();
 testSync();
 // testScheduleSync();
-

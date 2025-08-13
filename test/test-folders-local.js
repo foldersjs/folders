@@ -1,5 +1,5 @@
-var FoldersTest = require('./test-folders');
-var FoldersLocal = require('../src/folders-local');
+import FoldersTest from './test-folders.js';
+import FoldersLocal from '../src/folders-local.js';
 
-var foldersTest = new FoldersTest(new FoldersLocal());
+const foldersTest = new FoldersTest(new FoldersLocal());
 foldersTest.test('.');

@@ -1,39 +1,21 @@
-var UnionFio = require('../src/union');
-var FoldersTest = require('./test-folders');
-var Fio = require('../src/api');
+import UnionFio from '../src/union.js';
+import FoldersTest from './test-folders.js';
+import Fio from '../src/api.js';
 
-var fio = new Fio();
+const fio = new Fio();
 
-var mounts = [ {
+const mounts = [ {
 	"stub" : fio.provider("stub")
 }, {
 	"local" : fio.provider("local")
 }, {
 	"memory" : fio.provider("memory")
 }
-/*
- // here we have to install specified extenal module.
- , {
-	"ftp" : fio.provider("ftp", {
-		connectionString : "ftp://test:123456@localhost:3333",
-		enableEmbeddedServer : true
-	})
-}, {
-	"ssh" : fio.provider("ssh", {
-		connectionString : "ssh://test:123456@localhost:3334",
-		enableEmbeddedServer : true
-	})
-}, {
-	"hdfs" : fio.provider("hdfs", {
-		baseurl : "http://45.55.223.28/webhdfs/v1/data/",
-		username : 'hdfs'
-	})
-} */
 ];
 
-var unionfs = new UnionFio(fio, mounts, {
+const unionfs = new UnionFio(fio, mounts, {
 	"view" : "list"
 });
 
-var foldersTest = new FoldersTest(unionfs);
+const foldersTest = new FoldersTest(unionfs);
 foldersTest.test('/memory/');

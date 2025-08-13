@@ -9,7 +9,7 @@
  */
 
 // NOTES: Needs to be provided with a promises library.
-var Promise = function() { throw "Promises library must be included in constructor"; };
+const Promise = function() { throw "Promises library must be included in constructor"; };
 
 /*
 * Global Variables 
@@ -21,12 +21,12 @@ var Promise = function() { throw "Promises library must be included in construct
  * FIXME: This may be more appropriate in the test folder.
  *
  */
-module.exports = function(uri, backend) {
+export default function(uri, backend) {
       
-    var uri = uri || '/' ;
+    uri = uri || '/' ;
     console.log(">> Requested URI", uri);
-    var stubShare = {};
-    var response  = {};
+    let stubShare = {};
+    const response  = {};
 
     uri = uri.split('/',3);
     if(uri.length > 2) uri = "/" + uri[1] + "/";
@@ -63,11 +63,11 @@ module.exports = function(uri, backend) {
 		return new Promise(function(done, fail) {
 			backend.cat("stub-file.txt", function(result, err) {
 				if(err) return fail(err);
-				var headers = {};
+				const headers = {};
 				headers['X-File-Name'] = result.name;
 				headers['X-File-Size'] = result.size;
 				headers['Content-Length'] = result.size;
-				var response = {
+				const response = {
 					headers: headers,
 					content: result.stream,
 					status: 200
@@ -135,7 +135,7 @@ module.exports = function(uri, backend) {
 
     
     //send a stub response testshare      
-   var result = function(stubShare) {
+   const result = function(stubShare) {
       response.content = JSON.stringify(stubShare);
       response.headers = {'Content-Type':'application/json'};
       response.status  = 200;
@@ -157,16 +157,3 @@ module.exports = function(uri, backend) {
     return function() { return result(stubShare); }; 
   
 };
-
-
-
-
-
-
-  
-    
-
- 
-
-
-
